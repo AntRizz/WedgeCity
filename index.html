@@ -119,7 +119,7 @@ section[hidden]{display:none}
 .addp input,.addp select{font:16px Inter,sans-serif;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
 @media(max-width:800px){.mapgrid{grid-template-columns:minmax(0,1fr)}.addp{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.addp button{grid-column:1/-1}}
 #lmap{height:min(62vh,560px);border-radius:16px;border:3px solid #ff2e88;background:#0d0820}
-#lmap .leaflet-tile-pane{filter:sepia(.6) hue-rotate(225deg) saturate(2.2) brightness(.95)}
+#lmap .leaflet-tile-pane{filter:invert(1) hue-rotate(185deg) sepia(.35) hue-rotate(230deg) saturate(1.8) brightness(.85) contrast(1.1)}
 .leaflet-container{font:13px Inter,sans-serif}
 .lb{display:flex;flex-direction:column;align-items:center;transform:translateY(-8px)}
 .lb i{width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.6)}
@@ -471,9 +471,9 @@ function rMappa(){
 <div class="mapgrid"><div><div id="lmap"></div><div class="radarw" style="margin-top:12px"><div class="obj" id="objbox" style="margin-top:0"></div></div></div>
 <div class="card"><h3>I tuoi punti</h3><div id="plist"></div>
 <div class="addp"><input type="text" id="pn" maxlength="60" placeholder="Nome (es. Palestra)" aria-label="Nome del punto"><input type="text" id="pa" maxlength="200" placeholder="Indirizzo" aria-label="Indirizzo"><select id="pc" aria-label="Tipo">${Object.entries(BLIP).map(([k,v])=>`<option value="${k}">${v[1]}</option>`).join('')}</select><button class="act" id="padd">Aggiungi</button></div>
-<p class="note">Per Lidl e cassonetto abiti, Maps cerca quello più vicino a te. Per vederli sulla mappa scrivi l’indirizzo preciso. Mappa © OpenStreetMap, © CARTO. Percorsi: OSRM. Indirizzi: Nominatim.</p></div></div>`;
+<p class="note">Per Lidl e cassonetto abiti, Maps cerca quello più vicino a te. Per vederli sulla mappa scrivi l’indirizzo preciso. Mappa © OpenStreetMap. Percorsi: OSRM. Indirizzi: Nominatim.</p></div></div>`;
   if(window.L){LM=L.map('lmap',{zoomControl:true,attributionControl:true}).setView([44.384,7.52],12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd',attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(LM);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(LM);
     LM.on('click',e=>{S.pin={lat:+e.latlng.lat.toFixed(6),lng:+e.latlng.lng.toFixed(6)};S.wp='pin';save();updMap();rPlaces();toast('Segnalino piazzato','Tocca Google Maps o Waze per partire')});
     LM.on('dragstart',()=>{follow=false});}
   else{$('lmap').innerHTML='<p class="note" style="padding:20px;color:#fff">La mappa non si è caricata: controlla la connessione.</p>'}

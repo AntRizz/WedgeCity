@@ -19,4 +19,4 @@ Premi **Feedback** nell'app, scrivi e conferma su GitHub: diventa una issue con 
 - `manifest.json`, `icon*` — installazione
 - `SPEC.md` — specifiche
 
-Mappa © OpenStreetMap contributors, © CARTO. Percorsi OSRM. Indirizzi Nominatim.
+Mappa © OpenStreetMap contributors. Percorsi OSRM. Indirizzi Nominatim.

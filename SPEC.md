@@ -10,7 +10,7 @@ a mondo aperto, ma grafica originale: niente loghi, font, immagini o nomi di Roc
   (tranne mappa, percorsi e ricerca indirizzi, che usano la rete).
 - Librerie: Leaflet 1.9.4 (unpkg) per la mappa.
 - Servizi esterni gratuiti:
-  - mappa: tile CARTO Dark Matter su dati OpenStreetMap, colorate in stile tramonto;
+  - mappa: tile standard di OpenStreetMap (gratuite, senza chiave), scurite e colorate via CSS in stile tramonto;
   - percorsi su strada: OSRM (router.project-osrm.org), con ripiego sulla linea in linea d'aria;
   - indirizzi → coordinate: Nominatim (massimo 1 richiesta al secondo).
 
