@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wedge City</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#2b0f5c"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: giocoso ma concreto, come il menù missioni di un open world.
+   IDEA: l'HUD di un gioco a mondo aperto: soldi in alto, mappa dei giorni, missioni a fasce orarie, negozio premi.
+   PICTURE: banda HUD al tramonto tropicale con skyline e palme, contatore € grande, grado, XP e gettoni.
+   COLOUR and TYPE: viola-magenta-arancio, turchese di supporto, verde contante; Anton + Inter.
+   LAYOUT: HUD a tutta larghezza, schede, carte che si impilano su mobile, toast "missione completata". */
+:root{color-scheme:light dark;
+--bg:light-dark(#fff3f8,#140a26);--ink:light-dark(#1d0f2b,#fbeefa);--mut:light-dark(#6e5878,#c3aed0);
+--panel:light-dark(#ffffff,#22123b);--line:light-dark(#f6d3e6,#3d2560);--soft:light-dark(#fbe6f1,#2d1950);
+--pink:#ff2e88;--teal:light-dark(#008f87,#20e3d2);--sun:#ffb13b;--cash:light-dark(#128a4a,#3ddc84);--warn:light-dark(#b4261c,#ff7b72)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(18px,3vw,40px) max(5vw,16px)}
+.hud{background:linear-gradient(175deg,#2b0f5c 0%,#8a1f8f 30%,#ff2e88 62%,#ff8a3d 85%,#ffc65c 100%);color:#fff;position:relative;overflow:hidden;padding-bottom:clamp(40px,5vw,64px)}
+.hud svg.sky{position:absolute;inset:auto 0 0 0;width:100%;height:110px;opacity:.6;pointer-events:none}
+.hudin{position:relative;max-width:1240px;margin:auto;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px;align-items:end}
+h1{font:400 clamp(34px,6vw,58px)/1.02 Anton,Impact,sans-serif;margin:0;letter-spacing:.5px;text-wrap:balance;text-shadow:3px 3px 0 #20e3d2,6px 6px 0 rgba(20,6,40,.45)}
+.sub{opacity:.95;margin:8px 0 0;max-width:52ch}
+.stats{display:grid;gap:8px;background:rgba(20,6,40,.62);backdrop-filter:blur(4px);border-radius:18px;padding:16px}
+.cash{font:400 clamp(40px,7vw,64px)/1 Anton,Impact,sans-serif;color:#b8ffd6;text-shadow:0 3px 0 #0b3d22}
+.cashl{font-size:14px;opacity:.95}
+.xp{height:12px;border-radius:6px;background:rgba(0,0,0,.3);overflow:hidden}
+.xp i{display:block;height:100%;background:linear-gradient(90deg,#20e3d2,#fff);border-radius:6px;transition:width .5s}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{background:rgba(0,0,0,.28);border-radius:99px;padding:4px 12px;font-size:14px;white-space:nowrap}
+nav{position:sticky;top:0;z-index:1050;background:var(--bg);border-bottom:1px solid var(--line)}
+nav .scroll{display:flex;gap:6px;max-width:1240px;margin:auto;padding:8px max(5vw,16px);overflow-x:auto}
+nav button{flex:none;font:600 15px Inter,sans-serif;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+nav button[aria-selected=true]{background:linear-gradient(90deg,#ff2e88,#ff8a3d);color:#fff;border-color:transparent}
+main{max-width:1240px;margin:auto}
+h2{font:400 clamp(26px,4vw,36px)/1.05 Anton,Impact,sans-serif;margin:0 0 6px;letter-spacing:.4px;color:var(--pink)}
+h3{font:800 17px/1.3 Inter,sans-serif;margin:0 0 6px}
+.lead{color:var(--mut);margin:0 0 16px;max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card.main{border-left:6px solid var(--teal)}
+.tag{display:inline-block;font-size:12px;font-weight:600;border-radius:7px;padding:1px 7px;white-space:nowrap}
+.t-off{background:#ffe0ea;color:#a3123f}.t-ril{background:#dff6e8;color:#0c6a37}.t-sti{background:var(--soft);color:var(--mut)}
+.q{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-top:1px dashed var(--line);cursor:pointer}
+.q:first-of-type{border-top:0}
+.q input{width:24px;height:24px;margin:1px 0 0;accent-color:var(--pink)}
+.q.done .qt{text-decoration:line-through;opacity:.5}
+.qt b{display:block;font-weight:600}
+.qt small{color:var(--mut);font-size:14px;display:block}
+.xpb{font-size:13px;color:var(--pink);font-weight:800;white-space:nowrap}
+.slot{font:400 20px/1 Anton,Impact,sans-serif;color:var(--teal);letter-spacing:.4px;margin:4px 0 2px}
+.map{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;margin:0 0 16px}
+.map button{font:400 18px/1 Anton,Impact,sans-serif;min-height:52px;border-radius:10px;border:2px solid transparent;color:var(--ink);cursor:pointer;background:linear-gradient(to top,var(--teal) var(--p),var(--soft) var(--p));padding:4px 0}
+.map button small{display:block;font:600 11px Inter,sans-serif;color:var(--mut);margin-top:3px}
+.map button.sel{border-color:var(--pink)}
+.map button.fut{opacity:.55}
+.ring{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.ring b{font:400 34px/1 Anton,Impact,sans-serif;color:var(--teal)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:13px;color:var(--mut);font-weight:600}
+td.n,th.n{text-align:right;white-space:nowrap}
+input[type=number],input[type=date]{font:16px Inter,sans-serif;min-height:44px;padding:6px 8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+.it{display:grid;grid-template-columns:26px minmax(0,1fr) 76px 92px;gap:10px;align-items:center;padding:10px 0;border-top:1px dashed var(--line)}
+.it:first-of-type{border-top:0}
+.it input[type=checkbox]{width:24px;height:24px;accent-color:var(--pink)}
+.it .est{text-align:right;white-space:nowrap;font-weight:600}
+.it input[type=number]{text-align:right;padding:6px}
+.it.got .nm{text-decoration:line-through;opacity:.55}
+.it.home{opacity:.45}
+.nm small{display:block;color:var(--mut);font-size:13px}.estm{display:none;font-weight:700;color:var(--ink)}
+.home-b{background:none;border:0;color:var(--teal);font:600 13px Inter,sans-serif;padding:4px 0;cursor:pointer;min-height:32px;text-decoration:underline}
+.rep{font:400 20px/1 Anton,Impact,sans-serif;color:var(--teal);margin:14px 0 4px;letter-spacing:.4px}
+button.act{font:700 15px Inter,sans-serif;min-height:44px;padding:0 18px;border-radius:12px;border:0;background:var(--pink);color:#fff;cursor:pointer}
+button.act[disabled]{opacity:.4;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--pink);border:1px solid var(--pink)}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:10px;margin:0 0 14px}
+.tot .card{padding:12px 14px}
+.big{font:400 30px/1 Anton,Impact,sans-serif;white-space:nowrap}
+.pos{color:var(--cash)}.neg{color:var(--warn)}
+.day{display:grid;grid-template-columns:92px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.day .dt{font:400 22px/1 Anton,Impact,sans-serif;color:var(--teal)}
+.day .dt small{display:block;font:600 13px Inter,sans-serif;color:var(--mut);margin-top:4px}
+.day.today{background:var(--soft);border-radius:12px;padding:12px}
+.meal{margin:2px 0}.meal span{color:var(--mut);font-size:14px;display:inline-block;width:58px}
+.prep{margin-top:6px;font-size:14px;background:light-dark(#fff0dc,#3a1f3e);border-radius:8px;padding:6px 10px;display:inline-block}
+.shop{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 0;border-top:1px dashed var(--line)}
+.shop:first-of-type{border-top:0}
+.coin{font:400 20px/1 Anton,Impact,sans-serif;color:var(--sun)}
+.fig{position:relative;min-height:280px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.note{font-size:14px;color:var(--mut)}
+.scroll{overflow-x:auto}
+section[hidden]{display:none}
+.add{display:grid;grid-template-columns:minmax(0,1fr) 130px auto;gap:8px;margin-top:12px}.add input,.add select{font:16px Inter,sans-serif;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}.cw{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:start;border-top:1px dashed var(--line)}.cw .q{border-top:0}.del{background:none;border:0;color:var(--mut);font-size:22px;min-height:44px;cursor:pointer}.del:hover{color:var(--warn)}@media(max-width:600px){.add{grid-template-columns:minmax(0,1fr) 110px}.add button{grid-column:1/-1}}
+.mapgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px}
+.radarw{background:#0d0820;border-radius:20px;padding:14px;color:#fff}
+.radar{display:block;width:100%;max-width:420px;aspect-ratio:1;margin:auto}
+.radar .blip{cursor:pointer}
+.obj{margin-top:12px;display:grid;gap:8px}
+.obj b{font:400 24px/1.1 Anton,Impact,sans-serif;letter-spacing:.4px}
+.nav2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.nav2 a{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:12px;font:700 15px Inter,sans-serif;text-decoration:none;color:#fff}
+.gm{background:#1a73e8}.wz{background:#05c8f7;color:#0b1b2b!important}
+.pl{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:10px;align-items:start;padding:12px 0;border-top:1px dashed var(--line)}
+.pl:first-of-type{border-top:0}
+.dot{width:16px;height:16px;border-radius:50%;margin-top:4px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.pl input{font:15px Inter,sans-serif;min-height:40px;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%;margin-top:4px}
+.pl .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.pl .btns a,.pl .btns button{font:600 13px Inter,sans-serif;min-height:36px;padding:0 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;cursor:pointer}
+.pl.act{background:var(--soft);border-radius:12px;padding:12px}
+.addp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) 110px auto;gap:8px;margin-top:12px}
+.addp input,.addp select{font:16px Inter,sans-serif;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+@media(max-width:800px){.mapgrid{grid-template-columns:minmax(0,1fr)}.addp{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.addp button{grid-column:1/-1}}
+#lmap{height:min(62vh,560px);border-radius:16px;border:3px solid #ff2e88;background:#0d0820}
+#lmap .leaflet-tile-pane{filter:sepia(.6) hue-rotate(225deg) saturate(2.2) brightness(.95)}
+.leaflet-container{font:13px Inter,sans-serif}
+.lb{display:flex;flex-direction:column;align-items:center;transform:translateY(-8px)}
+.lb i{width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.6)}
+.lb span{margin-top:3px;background:rgba(5,2,15,.8);color:#fff;font:700 12px Inter,sans-serif;padding:1px 6px;border-radius:6px;white-space:nowrap}
+.me{width:30px;height:30px;display:grid;place-items:center}
+.me svg{filter:drop-shadow(0 1px 3px rgba(0,0,0,.7))}
+.mapbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.mapbar button{font:700 14px Inter,sans-serif;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+#dock{position:fixed;top:auto;left:0;right:0;bottom:0;z-index:1100;display:grid;grid-template-columns:repeat(5,1fr);background:#140a26;border-top:2px solid #ff2e88;padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+#dock button{background:none;border:0;color:#c3aed0;font:600 12px Inter,sans-serif;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border-radius:12px}
+#dock button svg{width:24px;height:24px}
+#dock button[aria-current=page]{color:#fff;background:linear-gradient(180deg,rgba(255,46,136,.35),rgba(255,138,61,.15))}
+#dock button[aria-current=page] svg{color:#20e3d2}
+#fbbtn{position:fixed;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:1100;font:700 13px Inter,sans-serif;min-height:40px;padding:0 14px;border-radius:99px;border:2px solid #20e3d2;background:#140a26;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+#fbwrap{position:fixed;inset:0;z-index:1200;background:rgba(10,4,24,.6);display:grid;place-items:end center;padding:16px}
+#fbwrap[hidden]{display:none}
+#fbbox{width:min(560px,100%);background:var(--panel);color:var(--ink);border-radius:18px;padding:18px;border:2px solid var(--pink);margin-bottom:calc(70px + env(safe-area-inset-bottom))}
+#fbbox textarea{width:100%;min-height:130px;font:16px Inter,sans-serif;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:10px}
+#fbbox select{font:16px Inter,sans-serif;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 8px}
+.go{font:600 13px Inter,sans-serif;color:var(--teal);margin-left:6px;white-space:nowrap}
+#toast{bottom:calc(150px + env(safe-area-inset-bottom))!important;position:fixed;left:50%;bottom:24px;transform:translate(-50%,calc(100% + 48px));visibility:hidden;background:linear-gradient(90deg,#2b0f5c,#ff2e88 60%,#ff8a3d);color:#fff;border-radius:14px;padding:12px 20px;font:400 22px/1.1 Anton,Impact,sans-serif;letter-spacing:.6px;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:transform .35s cubic-bezier(.2,1.4,.4,1);z-index:9;white-space:nowrap;pointer-events:none}
+#toast small{display:block;font:600 13px Inter,sans-serif;color:#b8ffd6;letter-spacing:0}
+#toast.on{transform:translate(-50%,0);visibility:visible}
+@media(max-width:760px){.hudin{grid-template-columns:minmax(0,1fr)}.hud svg.sky{height:70px}}
+@media(max-width:600px){.day{grid-template-columns:minmax(0,1fr)}.it{grid-template-columns:26px minmax(0,1fr) 84px}.it .est{display:none}.estm{display:inline}}
+@media(prefers-reduced-motion:reduce){.xp i,#toast{transition:none}}
+</style>
+</head>
+<body>
+<header class="hud band">
+<svg class="sky" viewBox="0 0 1200 110" preserveAspectRatio="none" aria-hidden="true">
+<circle cx="760" cy="96" r="70" fill="#ffd27a" opacity=".35"/>
+<path d="M0 110V70h60v-30h40v30h50V20h50v50h30V45h70v65z M330 110V55h45V30h35v25h40V10h55v100z M560 110V60h50V35h30v25h60V50h40v60z M760 110V25h45v40h40V5h60v105z M940 110V50h50V30h50v40h40V45h120v65z" fill="#160629"/>
+<g fill="#160629"><path d="M300 110 C305 80 300 60 292 40 L296 39 C305 60 310 82 306 110Z"/><path d="M294 40 c-18-6-34 0-44 10 c14-4 28-6 44-6z M294 40 c14-12 32-12 44-4 c-16 0-30 2-44 8z M294 40 c-6-14-20-22-34-22 c12 6 24 12 34 24z M294 40 c4-14 16-24 32-26 c-12 8-22 16-32 28z"/><path d="M1060 110 C1066 76 1060 50 1050 28 L1054 27 C1066 50 1072 78 1066 110Z"/><path d="M1052 28 c-18-6-34 0-44 10 c14-4 28-6 44-6z M1052 28 c14-12 32-12 44-4 c-16 0-30 2-44 8z M1052 28 c-6-14-20-22-34-22 c12 6 24 12 34 24z M1052 28 c4-14 16-24 32-26 c-12 8-22 16-32 28z"/></g>
+<path d="M0 110 L1200 110 L1200 96 L0 102Z" fill="#0c0318"/>
+</svg>
+<div class="hudin">
+<div>
+<div class="row" style="margin-bottom:10px"><span class="pill" id="dayPill">Giorno 1 di 19</span><span class="pill" id="streak">Serie: 0 giorni</span></div>
+<h1>Wedge City</h1>
+<p class="sub">Protagonista: Antonio. Missione in corso: arrivare al 15 dicembre mangiando bene, con la casa in ordine e i soldi in tasca.</p>
+</div>
+<div class="stats">
+<div class="cashl">Risparmiati rispetto alla spesa solita</div>
+<div class="cash" id="cash">€ 0</div>
+<div class="row"><span class="pill" id="pag">Pagnotta di Claude: 0/22 €</span><span class="pill" id="coins">0 gettoni</span></div>
+<div class="row" style="justify-content:space-between"><b id="rank" style="font:400 20px/1 Anton,Impact,sans-serif;letter-spacing:.5px">Pivello · Liv. 1</b><span class="cashl" id="xptxt">0 XP</span></div>
+<div class="xp" aria-hidden="true"><i id="xpbar" style="width:0%"></i></div>
+</div>
+</div>
+</header>
+
+<nav id="subnav" hidden><div class="scroll" role="tablist" id="tabs"></div></nav>
+
+<main>
+<section class="band" id="s-oggi"></section>
+<section class="band" id="s-mappa" hidden></section>
+<section class="band" id="s-spesa" hidden></section>
+<section class="band" id="s-menu" hidden></section>
+<section class="band" id="s-prep" hidden></section>
+<section class="band" id="s-routine" hidden></section>
+<section class="band" id="s-casa" hidden></section>
+<section class="band" id="s-hobby" hidden></section>
+<section class="band" id="s-lavoro" hidden></section>
+<section class="band" id="s-premi" hidden></section>
+<section class="band" id="s-peso" hidden></section>
+<div class="band"><p class="note" id="sync">Caricamento salvataggi…</p><div class="card"><h3>Backup</h3><p class="note" style="margin-top:0">I dati stanno solo su questo telefono. Copia il backup ogni tanto e tienilo in una nota: con Importa li ripristini o li porti su un altro dispositivo.</p><div class="row"><button class="act" id="bkcopy">Copia backup</button><button class="act ghost" id="bkshow">Mostra il testo</button></div><textarea id="bkin" placeholder="Incolla qui il backup e premi Importa" style="width:100%;min-height:90px;margin-top:10px;font:13px monospace;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:8px"></textarea><div class="row" style="margin-top:8px"><button class="act" id="bkimp">Importa (sostituisce i dati di questo telefono)</button></div><textarea id="bktxt" readonly hidden style="width:100%;min-height:120px;margin-top:10px;font:13px monospace;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:8px"></textarea></div></div>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+<button id="fbbtn" aria-label="Lascia un feedback">Feedback</button>
+<div id="fbwrap" hidden><div id="fbbox" role="dialog" aria-modal="true" aria-labelledby="fbt"><h3 id="fbt">Feedback</h3><p class="note" style="margin-top:0">Scrivi cosa cambiare o cosa non va. Si apre GitHub con il commento già pronto: premi “Create” e finisce nel database dei feedback, che Claude legge.</p><div class="row" style="margin-bottom:8px"><select id="fbtype" aria-label="Tipo"><option value="Idea">Idea</option><option value="Bug">Qualcosa non va</option><option value="Contenuto">Contenuto da cambiare</option></select><span class="note" id="fbctx"></span></div><textarea id="fbtxt" maxlength="2000" placeholder="Es. nella scheda Spesa vorrei…"></textarea><div class="row" style="margin-top:10px;justify-content:flex-end"><button class="act ghost" id="fbclose">Chiudi</button><a class="act" id="fbsend" href="#" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">Invia su GitHub</a></div></div></div>
+<nav id="dock" aria-label="Sezioni"></nav>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+{
+const TABS=[['oggi','Oggi'],['mappa','Mappa'],['spesa','Spesa Lidl'],['menu','Menù'],['prep','Meal prep'],['routine','Routine'],['casa','Casa'],['hobby','Hobby'],['lavoro','Lavoro'],['premi','Premi'],['peso','Peso']];
+const GROUPS=[['oggi','Oggi',['oggi'],'<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="currentColor"/>'],['mappa','Mappa',['mappa'],'<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.6" fill="currentColor"/>'],['missioni','Missioni',['casa','hobby','lavoro'],'<path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'],['cibo','Cibo',['spesa','menu','prep'],'<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 21V3c-2.5 1.5-3.5 4-3.5 8H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'],['tu','Tu',['peso','routine','premi'],'<circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>']];
+const lastIn={};
+const SRC={off:['Offerta 26/11–2/12','t-off'],ril:['Prezzo Lidl rilevato','t-ril'],sti:['Stima','t-sti']};
+const SHOP=[
+{id:'pasta',n:'Pasta Combino (semola)',q:'2 × 500 g',e:1.28,s:'ril',t:1},
+{id:'pastai',n:'Pasta integrale Combino',q:'2 × 500 g',e:1.70,s:'ril',t:1},
+{id:'riso',n:'Riso',q:'1 kg',e:1.59,s:'sti',t:1},
+{id:'avena',n:'Fiocchi d’avena Crownfield',q:'2 × 500 g',e:1.80,s:'sti',t:1},
+{id:'lent',n:'Lenticchie secche',q:'2 × 500 g',e:2.28,s:'ril',t:1},
+{id:'ceci',n:'Ceci secchi',q:'500 g',e:1.20,s:'sti',t:1},
+{id:'uova',n:'Uova',q:'20 (2 conf. da 10)',e:5.00,s:'sti',t:1},
+{id:'pollo',n:'Fusi di pollo',q:'2 vaschette, ~2 kg (12 fusi)',e:9.00,s:'sti',t:1,x:'Se superano 5,50 €/kg prendi le sovracosce se sono in offerta'},
+{id:'sgombro',n:'Sgombro in scatola',q:'5 scatolette',e:5.50,s:'sti',t:1},
+{id:'latte',n:'Latte UHT Milbona',q:'6 L',e:3.89,s:'off',t:1},
+{id:'patate',n:'Patate',q:'3 kg',e:2.50,s:'sti',t:1},
+{id:'passata',n:'Passata di pomodoro',q:'3 bottiglie',e:1.95,s:'sti',t:1},
+{id:'spinaci',n:'Spinaci XXL',q:'1 busta da 650 g',e:1.99,s:'off',t:1},
+{id:'cavolo',n:'Cavolo cappuccio',q:'1',e:0.98,s:'off',t:1},
+{id:'carote',n:'Carote',q:'2 kg',e:1.60,s:'sti',t:1},
+{id:'cipolle',n:'Cipolle',q:'1 kg',e:1.10,s:'sti',t:1},
+{id:'verza',n:'Verza',q:'1',e:1.50,s:'sti',t:1},
+{id:'arance',n:'Arance XXL',q:'rete da 2,5 kg',e:2.99,s:'off',t:1},
+{id:'mele',n:'Mele Golden IGP (Lidl Plus)',q:'2 kg',e:2.29,s:'off',t:1},
+{id:'banane',n:'Banane',q:'1 kg',e:1.49,s:'sti',t:1},
+{id:'pane1',n:'Pane',q:'~600 g (metà in freezer a fette)',e:1.50,s:'sti',t:1},
+{id:'pane2',n:'Pane',q:'~600 g',e:1.50,s:'sti',t:2},
+{id:'frutta2',n:'Frutta di stagione',q:'~3 kg (arance, mele, clementine)',e:4.00,s:'sti',t:2},
+{id:'verd2',n:'Verdura fresca',q:'spinaci o broccoli + 1 cavolo',e:2.50,s:'sti',t:2}];
+const USUAL=50/7*19;
+const DN=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+const MESI=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+const P={
+'2026-11-27':'Dopo la spesa (15 min): 1 vaschetta di pollo subito in freezer, metà pane a fette in freezer.',
+'2026-11-28':'Meal prep 1 (1 h 15): lenticchie 320 g, forno con 6 fusi, patate e carote, verza stufata.',
+'2026-11-30':'Sera (2 min): 160 g di ceci a bagno.',
+'2026-12-01':'Sera (10 min + fornello): cuoci i ceci 1 h 30. Pollo dal freezer al frigo.',
+'2026-12-03':'Meal prep 2 (1 h): forno con gli altri 6 fusi, patate e carote.',
+'2026-12-04':'Sera (40 min): lenticchie 320 g per sab–mar.',
+'2026-12-06':'Spesa 2 al Lidl: pane, frutta, verdura (lista nella scheda Spesa).',
+'2026-12-07':'Sera (2 min): 160 g di ceci a bagno.',
+'2026-12-08':'Sera: cuoci i ceci 1 h 30.',
+'2026-12-11':'Sera (40 min): lenticchie 320 g per sab–mar.'};
+const PRANZO={
+'2026-11-27':'Con quello che hai in casa (la spesa è oggi)',
+'2026-11-28':'Zuppa di lenticchie e patate + pane',
+'2026-11-29':'Pasta integrale con ragù di lenticchie e passata',
+'2026-11-30':'Pasta e lenticchie','2026-12-01':'Pasta e lenticchie',
+'2026-12-02':'Pasta e ceci','2026-12-03':'Riso con ceci e spinaci',
+'2026-12-04':'Riso con verdure saltate e 1 uovo',
+'2026-12-05':'Zuppa di lenticchie e patate + pane',
+'2026-12-06':'Pasta integrale con ragù di lenticchie e passata',
+'2026-12-07':'Pasta e lenticchie','2026-12-08':'Pasta e lenticchie',
+'2026-12-09':'Pasta e ceci','2026-12-10':'Riso con ceci e spinaci',
+'2026-12-11':'Riso con verdure saltate e 1 uovo',
+'2026-12-12':'Zuppa di lenticchie e patate + pane',
+'2026-12-13':'Pasta integrale con ragù di lenticchie e passata',
+'2026-12-14':'Pasta e lenticchie','2026-12-15':'Pasta e lenticchie'};
+const C={
+'2026-11-27':'Frittata di 2 uova con spinaci + pane',
+'2026-11-28':'2 fusi al forno con patate e carote',
+'2026-11-29':'2 fusi al forno con patate',
+'2026-11-30':'2 fusi + verza stufata + pane',
+'2026-12-01':'Sgombro con patate lesse e insalata di cavolo',
+'2026-12-02':'2 uova strapazzate con spinaci + pane',
+'2026-12-03':'2 fusi al forno con patate e carote',
+'2026-12-04':'2 fusi + verza stufata + pane',
+'2026-12-05':'2 fusi al forno con patate',
+'2026-12-06':'Sgombro + insalata di cavolo e carote + pane',
+'2026-12-07':'Frittata di 3 uova e cipolle + carote',
+'2026-12-08':'Sgombro con patate lesse',
+'2026-12-09':'Uova in purgatorio (2 uova nella passata) + pane',
+'2026-12-10':'Sgombro + verdure saltate + pane',
+'2026-12-11':'Frittata di 2 uova con verdure + pane',
+'2026-12-12':'2 uova sode, patate e spinaci',
+'2026-12-13':'Sgombro con patate al forno',
+'2026-12-14':'Frittata di 2 uova + verza',
+'2026-12-15':'2 uova strapazzate con verdure + pane'};
+const DAYS=[];{let d=new Date(2026,10,27);while(d<=new Date(2026,11,15)){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');DAYS.push({k,w:d.getDay(),g:d.getDate(),m:d.getMonth()});d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1)}}
+const ROUT=[
+{id:'sveglia',t:'6:15',n:'Sveglia al primo suono: in piedi, luce accesa, un bicchiere d’acqua',xp:20},
+{id:'cola',t:'6:25',n:'Colazione: l’avena preparata ieri sera nel latte + 1 frutto',xp:10},
+{id:'box',t:'7:00',n:'Prendi pranzo e frutto dal frigo ed esci (al lavoro alle 7:30)',xp:15},
+{id:'passi',t:'Pausa',n:'Camminata di 20–30 minuti alla luce del giorno (obiettivo 8000 passi)',xp:15},
+{id:'casa10',t:'19:15',n:'25 minuti di casa: piatti, piano cucina, raccolta oggetti + zona del giorno',xp:15},
+{id:'cena',t:'19:40',n:'Cena del menù, con verdura',xp:10},
+{id:'ing',t:'21:10',n:'Lezione di inglese',xp:15},
+{id:'domani',t:'21:45',n:'Prepara domani: vestiti pronti, 50 g di avena nel latte in frigo, pranzo nel contenitore, telefono in carica lontano dal letto',xp:20},
+{id:'spento',t:'22:15',n:'Schermi spenti, luce bassa, a letto entro le 22:30',xp:15}];
+const TRAIN={1:'Appena rientri (18:00): 25 min a corpo libero, squat, piegamenti, affondi, plank (3 giri)',3:'Appena rientri (18:00): 25 min a corpo libero, squat, piegamenti, affondi, plank (3 giri)',5:'Appena rientri (18:00): 25 min a corpo libero, squat, piegamenti, affondi, plank (3 giri)'};
+const ZONE={1:'Bagno: sanitari, lavandino, specchio (20 min)',2:'Aspirapolvere in tutta casa (20 min)',3:'Cucina a fondo: piano cottura, frigo prima della spesa (25 min)',4:'Pavimenti lavati (25 min)',5:'Polvere su mobili e mensole (15 min)',6:'Lavatrici del weekend: scuri, chiari, asciugamani',0:'Cambio lenzuola + lavatrice a 60° + meal prep'};
+const HOUSE=[
+{g:'Missione principale: Cambio armadio',w:'Sabato 28 e domenica 29',m:1,q:[
+['arm1','Svuota l’armadio dei capi estivi',40],
+['arm2','Dividi in tre mucchi: tieni, lava, dona o butta',40],
+['arm3','Lavatrice 1: invernali scuri a 30–40°',30],
+['arm4','Lavatrice 2: invernali chiari a 30–40°',30],
+['arm5','Maglioni di lana: programma lana a 30° o a mano, stesi in piano',30],
+['arm6','Estivo lavato e asciutto in scatole o sacchi sottovuoto, sopra l’armadio',40],
+['arm7','Invernale piegato e appeso: davanti le cose che usi di più',40],
+['arm8','Sacco “dona” in macchina, da lasciare al cassonetto abiti',20]]},
+{g:'Missione principale: Grande pulizia',w:'Sabato 28 mattina, 2 ore circa',m:1,q:[
+['gp1','Apri le finestre, musica, sacco della spazzatura in mano',10],
+['gp2','Camera: polvere dall’alto in basso, sotto il letto, comodini',40],
+['gp3','Cucina: frigo svuotato e pulito prima di riempirlo con la spesa',40],
+['gp4','Cucina: forno, piano cottura, mobili fuori e dentro',40],
+['gp5','Bagno: sanitari, doccia, piastrelle, specchio',40],
+['gp6','Aspirapolvere ovunque, poi pavimenti lavati',40],
+['gp7','Butta tutto quello che è scaduto o rotto',20]]},
+{g:'Ciclo lavatrici',w:'Ogni weekend',m:0,q:[
+['lav1','Lenzuola 28–29 nov: cambiate e lavate a 60°',20],
+['lav2','Lenzuola 6 dic: cambiate e lavate a 60°',20],
+['lav3','Lenzuola 13 dic: cambiate e lavate a 60°',20],
+['lav4','Asciugamani lavati a 60° (ogni weekend)',15],
+['lav5','Regola d’oro: stendi entro 30 minuti dalla fine del lavaggio',10],
+['lav6','Raccogli il giorno dopo e piega subito mentre ascolti l’inglese',10]]}];
+const PREPS=[
+['mp1','Sabato 28 novembre · Meal prep 1 · 1 h 15',[
+'Lenticchie: 320 g in pentola senza ammollo con 1 cipolla, 1 carota, alloro e acqua fredda abbondante. 35–40 minuti a fuoco basso, sale alla fine.',
+'Intanto forno a 200°: 6 fusi, 800 g di patate a spicchi, 3 carote a bastoncini, olio, sale, rosmarino. 50 minuti, girando a metà.',
+'Verza a striscioline in padella con cipolla, un filo d’olio e mezzo bicchiere d’acqua, coperta 20 minuti.',
+'Porziona: 4 contenitori di lenticchie (80 g da crude l’una), 3 cene di pollo. Tutto in frigo, si conserva 3–4 giorni.']],
+['mp2','Lunedì 30 e martedì 1 · Ceci · 10 minuti attivi',[
+'Lunedì sera: 160 g di ceci in una ciotola con tanta acqua fredda.',
+'Martedì sera: scola, cuoci 1 h 30 in acqua nuova con alloro mentre fai altro. Sale alla fine.',
+'Martedì sera: sposta la seconda vaschetta di pollo dal freezer al frigo.']],
+['mp3','Giovedì 3 dicembre · Meal prep 2 · 1 h',[
+'Forno come il primo: 6 fusi, patate, carote. Mentre cuoce, lava e taglia la verdura per 3 giorni.',
+'3 cene di pollo in contenitori.']],
+['mp4','Venerdì 4 e venerdì 11 · Lenticchie · 40 minuti',[
+'Come sabato 28: 320 g di lenticchie per i 4 pranzi da sabato a martedì.']],
+['mp5','Lunedì 7 e martedì 8 · Ceci',[
+'Lunedì sera ammollo, martedì sera cottura, come la prima volta.']]];
+
+const REP={arance:'Ortofrutta',mele:'Ortofrutta',banane:'Ortofrutta',spinaci:'Ortofrutta',cavolo:'Ortofrutta',verza:'Ortofrutta',carote:'Ortofrutta',cipolle:'Ortofrutta',patate:'Ortofrutta',frutta2:'Ortofrutta',verd2:'Ortofrutta',pane1:'Pane',pane2:'Pane',pasta:'Pasta, riso e legumi',pastai:'Pasta, riso e legumi',riso:'Pasta, riso e legumi',lent:'Pasta, riso e legumi',ceci:'Pasta, riso e legumi',avena:'Colazione',latte:'Colazione',passata:'Scatolame',sgombro:'Scatolame',uova:'Uova',pollo:'Carne'};
+const ORD=['Ortofrutta','Pane','Pasta, riso e legumi','Colazione','Scatolame','Uova','Carne'];
+const RANKS=['Pivello','Galoppino','Uomo di fiducia','Luogotenente','Boss del quartiere','Leggenda di Cuneo'];
+const PREMI=[
+{id:'p1',n:'Una serata di serie o film senza sensi di colpa',c:30},
+{id:'p2',n:'Gran Premio o partita sul divano, telefono lontano',c:30},
+{id:'p3',n:'Una sera senza la zona del giorno',c:25},
+{id:'p4',n:'Domenica sveglia libera, niente orari',c:45},
+{id:'p5',n:'Pizza fatta in casa il sabato (farina + passata già in casa)',c:60},
+{id:'p6',n:'Un dolce del Lidl fino a 1,50 € (dal budget rimasto)',c:90}];
+const K=()=>{const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')};
+let today=K();const realToday=today;if(today<DAYS[0].k)today=DAYS[0].k;if(today>DAYS[DAYS.length-1].k)today=DAYS[DAYS.length-1].k;
+let view=today;
+let S={checks:{},real:{},home:{},spent:{},weights:[],budget:100,custom:[],places:null,wp:'',pin:null};
+let ref=null,saving=false,pending=false;
+const eur=v=>'€ '+v.toFixed(2).replace('.',',');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+const dlabel=d=>DN[d.w]+' '+d.g+' '+MESI[d.m];
+const SLOT={domani:'Sera',sveglia:'Mattina',cola:'Mattina',box:'Mattina',passi:'Giornata',casa10:'Sera',cena:'Sera',ing:'Sera',spento:'Sera'};
+
+function save(){
+  try{localStorage.setItem('m15',JSON.stringify(S))}catch(e){}
+  return;
+  if(saving){pending=true;return}
+  saving=true;
+  Promise.resolve(ref.set(JSON.parse(JSON.stringify(S)))).then(()=>{$('sync').textContent='Salvato nel tuo account ✓'}).catch(()=>{$('sync').textContent='Salvataggio online non riuscito: i dati restano su questo dispositivo.'}).finally(()=>{saving=false;if(pending){pending=false;save()}});
+}
+const xpOf={};
+function dayItems(d){
+  const a=[['pr:'+d.k,15,'Pranzo: '+PRANZO[d.k],'100 g di pasta o riso, 80 g di legumi da crudi, verdura','Giornata'],['ce:'+d.k,15,'Cena: '+C[d.k],'150–200 g di verdura sempre','Sera']];
+  if(P[d.k])a.push(['mp:'+d.k,40,'Meal prep',P[d.k],'Sera']);
+  for(const r of ROUT)a.push(['r:'+d.k+':'+r.id,r.xp,r.t+' · '+r.n,'',SLOT[r.id]]);
+  if(TRAIN[d.w])a.push(['r:'+d.k+':train',30,'Allenamento',TRAIN[d.w],'Sera']);
+  if(d.w===1||d.w===5)a.push(['r:'+d.k+':peso',10,'Pesata','A digiuno, dopo il bagno: segnala nella scheda Peso','Mattina']);
+  a.push(['z:'+d.k,25,'Zona casa del giorno',ZONE[d.w],'Sera']);
+  for(const c of S.custom)if(c.a==='oggi'&&c.d===d.k)a.push(['c:'+c.id,c.xp,c.n,'','Tue']);
+  return a;
+}
+function pct(d){const a=dayItems(d);return a.filter(x=>S.checks[x[0]]).length/a.length}
+function chk(key,xp,title,sub){
+  const on=!!S.checks[key];
+  return `<label class="q${on?' done':''}"><input type="checkbox" data-k="${esc(key)}" ${on?'checked':''}><span class="qt"><b>${esc(title)}</b>${sub?`<small>${esc(sub)}</small>`:''}</span><span class="xpb">+${xp} XP</span></label>`;
+}
+function spesaTot(){let est=0,real=0,mix=0;for(const i of SHOP){if(S.home[i.id])continue;est+=i.e;const r=S.real[i.id];const rv=(r!==undefined&&r!==''&&!isNaN(+r))?+r:null;if(rv!==null)real+=rv;mix+=rv!==null?rv:i.e}return{est,real,mix}}
+function xpFor(k){if(xpOf[k])return xpOf[k];if(k.startsWith('c:')){const c=S.custom.find(x=>'c:'+x.id===k);return c?c.xp:0}return 10}
+function xpTot(){let xp=0;for(const k in S.checks)if(S.checks[k])xp+=xpFor(k);return xp}
+function coins(){let sp=0;for(const k in S.spent)sp+=S.spent[k]||0;return Math.floor(xpTot()/10)-sp}
+function streak(){let n=0;for(const d of DAYS){if(d.k>today)break;if(pct(d)>=.6)n++;else if(d.k<today)n=0}return n}
+function hud(){
+  const xp=xpTot(),lvl=1+Math.floor(xp/250);
+  $('xptxt').textContent=xp+' XP · '+(250-xp%250)+' al prossimo livello';
+  $('xpbar').style.width=((xp%250)/2.5)+'%';
+  $('rank').textContent=RANKS[Math.min(RANKS.length-1,Math.floor((lvl-1)/3))]+' · Liv. '+lvl;
+  const i=DAYS.findIndex(d=>d.k===today);$('dayPill').textContent='Giorno '+(i+1)+' di '+DAYS.length;
+  $('streak').textContent='Serie: '+streak()+' giorni';
+  $('coins').textContent=coins()+' gettoni';
+  const t=spesaTot(),sv=USUAL-t.mix;
+  $('cash').textContent=eur(Math.max(0,sv));
+  const n=Math.max(0,Math.floor(sv/22));
+  $('pag').textContent=sv>=22?'Pagnotta di Claude ×'+n+' ✓':'Pagnotta di Claude: '+Math.max(0,sv).toFixed(0)+'/22 €';
+}
+function chkC(c){const p=c.p&&places().find(x=>x.id===c.p);return `<div class="cw">${chk('c:'+c.id,c.xp,c.n,p?'Luogo: '+p.n:'')}${p&&dest(p)?`<a class="go" style="grid-column:1/-1;padding-left:36px;margin-top:-6px" href="${esc(gmaps(dest(p)))}" target="_blank" rel="noopener">Portami lì</a>`:''}<button class="del" data-delc="${esc(c.id)}" aria-label="Elimina missione">×</button></div>`}
+function addForm(a){return `<div class="add"><select id="pl-${a}" aria-label="Luogo (facoltativo)" style="grid-column:1/-1"><option value="">Senza luogo</option>${places().map(p=>`<option value="${esc(p.id)}">Luogo: ${esc(p.n)}</option>`).join('')}</select><input type="text" maxlength="140" id="new-${a}" placeholder="Nuova missione${a==='oggi'?' per questo giorno':''}…" aria-label="Nuova missione"><select id="xp-${a}" aria-label="Grandezza"><option value="10">Piccola · 10 XP</option><option value="25">Media · 25 XP</option><option value="50">Grande · 50 XP</option></select><button class="act" data-add="${a}">Aggiungi</button></div>`}
+function customCard(a,title){const cs=S.custom.filter(c=>c.a===a);return `<div class="card main"><h3>${title}</h3>${cs.map(chkC).join('')||'<p class="note" style="margin:0">Nessuna ancora: scrivila qui sotto.</p>'}${addForm(a)}</div>`}
+function questCard(key,g){const dn=g.q.filter(q=>S.checks[key+q[0]]).length;return `<div class="card"><h3>${esc(g.g)}</h3><p class="note" style="margin:0 0 6px">${esc(g.w)} · ${dn}/${g.q.length} fatte</p>${g.q.map(q=>chk(key+q[0],q[2],q[1],q[3]||'')).join('')}</div>`}
+const HOBBY_D=[['qm','13:00 · Meccanica quantistica: la lezione di 10 minuti in pausa pranzo',10],['mus','Ascolto guidato del brano del giorno, in cuffia, senza fare altro',10],['ingv','5 minuti di inglese parlato a voce (oltre alla lezione)',10]];
+const HOBBY=[
+{g:'Inglese: dal livello A2 verso B1',w:'Una alla settimana',q:[['i1','Guarda un episodio in inglese britannico con sottotitoli in inglese',25],['i2','Racconta la tua settimana in inglese a voce per 3 minuti',25],['i3','Ascolta un podcast BBC Learning English',25],['i4','Scrivi 10 frasi sul tuo lavoro in inglese e falle correggere',25]]},
+{g:'Linux e poi Docker',w:'Nel blocco libero 20:10–21:10, una per sera',q:[['l1','Muoviti tra le cartelle con pwd, ls, cd fino a 03Script',10],['l2','Crea, copia, sposta e cancella file: touch, cp, mv, rm',10],['l3','Modifica un file con nano e leggilo con cat e less',10],['l4','Permessi: capisci ls -l e usa chmod',25],['l5','Installa un pacchetto con apt (sudo apt install tree)',25],['l6','Il primo script bash in 03Script, reso eseguibile',50],['l7','Installa Docker e fai girare hello-world',50]]},
+{g:'Maker e F1',w:'Nel weekend, dopo le pulizie',q:[['m1','Un mini progetto Arduino o Raspberry Pi (anche solo far lampeggiare un LED)',50],['m2','Guarda un GP scegliendo un tema tecnico: gomme, aerodinamica o strategia',25],['m3','Scrivi in 5 righe cosa ti ha insegnato di ingegneria',25]]},
+{g:'Ascolto musicale',w:'Una alla settimana',q:[['a1','Riascolta un brano della settimana e nota un dettaglio nuovo',10],['a2','Crea una playlist con i brani che ti sono piaciuti di più',25]]}];
+const LAV_D=[['p3','7:30 · Scrivi le 3 priorità del giorno prima di aprire la mail',10],['chiudi','17:15 · Annota dove sei arrivato e il primo passo di domani',10]];
+const LAVORO=[
+{g:'Carriera',w:'Prima della conferma di aprile',q:[['c1','Segna le date della prossima sessione dell’esame di stato',10],['c2','Lista dei risultati ottenuti da portare al colloquio di conferma',25],['c3','Aggiorna il CV con i progetti di quest’anno',25]]}];
+function rHobby(){$('s-hobby').innerHTML=`<h2>Hobby</h2><p class="lead">Il tempo per gli hobby sta nei blocchi liberi della sera (18:25–19:15 e 20:10–21:10) e nel weekend. Le missioni sono suggerimenti: spunta quelle fatte e aggiungi le tue.</p><div class="grid"><div class="card main"><h3>Ogni giorno · ${dlabel(DAYS.find(x=>x.k===today))}</h3>${HOBBY_D.map(x=>chk('hb:'+today+':'+x[0],x[2],x[1],'')).join('')}</div>${customCard('hobby','Le tue missioni hobby')}${HOBBY.map(g=>questCard('ho:',g)).join('')}</div>`}
+function rLavoro(){$('s-lavoro').innerHTML=`<h2>Lavoro</h2><p class="lead">I progetti di lavoro li aggiungi qui sotto come missioni tue: restano solo sul telefono, così niente di aziendale finisce online. Dalle 7:30 alle 17:30, poi si stacca.</p><div class="grid"><div class="card main"><h3>Ogni giorno · ${dlabel(DAYS.find(x=>x.k===today))}</h3>${LAV_D.map(x=>chk('lv:'+today+':'+x[0],x[2],x[1],'')).join('')}</div>${customCard('lavoro','Le tue missioni di lavoro')}${LAVORO.map(g=>questCard('wk:',g)).join('')}</div>`}
+const BLIP={lavoro:['#3fa9ff','Lavoro'],spesa:['#3ddc84','Spesa'],casa:['#ff2e88','Casa'],altro:['#ffb13b','Altro']};
+const DEF_PLACES=[
+{id:'casa',n:'Casa',addr:'',c:'casa',fixed:1},
+{id:'merlo',n:'Lavoro · Merlo',addr:'Merlo S.p.A., Via Nazionale 9, San Defendente di Cervasca CN',c:'lavoro',fixed:1},
+{id:'lidl',n:'Lidl più vicino',addr:'Lidl Cuneo',c:'spesa',fixed:1},
+{id:'abiti',n:'Cassonetto abiti usati (sacco “dona”)',addr:'raccolta abiti usati Cuneo',c:'altro',fixed:0}];
+const places=()=>S.places||DEF_PLACES;
+const gmaps=a=>'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(a)+'&travelmode=driving';
+const waze=a=>'https://waze.com/ul?q='+encodeURIComponent(a)+'&navigate=yes';
+function autoWp(){const d=DAYS.find(x=>x.k===today);if(today==='2026-11-27'||today==='2026-12-06')return 'lidl';if(d&&d.w>=1&&d.w<=5)return 'merlo';return 'casa'}
+let LM=null,meMk=null,meAcc=null,route=null,mk={},me=null,follow=true,geoWatch=null,geoErr='';
+const pinPlace=()=>S.pin?{id:'pin',n:'Segnalino sulla mappa',addr:'',c:'altro',lat:S.pin.lat,lng:S.pin.lng}:null;
+const dest=p=>p.id==='pin'?p.lat+','+p.lng:(p.addr||(p.lat!=null?p.lat+','+p.lng:''));
+const wazeL=p=>p.id==='pin'||(!p.addr&&p.lat!=null)?'https://waze.com/ul?ll='+p.lat+','+p.lng+'&navigate=yes':waze(p.addr);
+function km(a,b){const R=6371,t=x=>x*Math.PI/180,dl=t(b.lat-a.lat),dg=t(b.lng-a.lng),x=Math.sin(dl/2)**2+Math.cos(t(a.lat))*Math.cos(t(b.lat))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+function curWp(){const P=places();if(S.wp==='pin'&&S.pin)return pinPlace();return P.find(p=>p.id===S.wp)||P.find(p=>p.id===autoWp())||P[0]}
+let geoQ=[],geoBusy=false;
+function geocode(p){if(!p.addr||geoQ.includes(p.id))return;geoQ.push(p.id);runGeo()}
+function runGeo(){if(geoBusy||!geoQ.length)return;geoBusy=true;const id=geoQ.shift();const p=places().find(x=>x.id===id);if(!p||!p.addr){geoBusy=false;return runGeo()}
+  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&q='+encodeURIComponent(p.addr),{headers:{'Accept-Language':'it'}}).then(r=>r.json()).then(j=>{if(j&&j[0]){if(!S.places)S.places=DEF_PLACES.map(x=>({...x}));const q=S.places.find(x=>x.id===id);if(q){q.lat=+j[0].lat;q.lng=+j[0].lon;q.ga=q.addr;save();updMap();rPlaces()}}else{toast('Indirizzo non trovato',p.n)}}).catch(()=>{}).finally(()=>{setTimeout(()=>{geoBusy=false;runGeo()},1100)})}
+function blipIcon(p,on){return L.divIcon({className:'',iconSize:[0,0],html:on?`<div class="lb" style="transform:translate(-50%,-100%)"><svg width="34" height="44" viewBox="0 0 34 44"><path d="M17 43 L4 22 A15 15 0 1 1 30 22Z" fill="#ffd400" stroke="#05020f" stroke-width="3"/><circle cx="17" cy="16" r="5" fill="#05020f"/></svg><span>${esc(p.n)}</span></div>`:`<div class="lb" style="transform:translate(-50%,-50%)"><i style="background:${BLIP[p.c][0]}"></i><span>${esc(p.n.length>18?p.n.slice(0,17)+'…':p.n)}</span></div>`})}
+function meIcon(hd){return L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,15],html:`<div class="me"><svg width="26" height="26" viewBox="0 0 26 26" style="transform:rotate(${hd||0}deg)"><path d="M13 2 L23 23 L13 18 L3 23Z" fill="#fff" stroke="#05020f" stroke-width="2"/></svg></div>`})}
+function updMap(){if(!LM)return;const P=places(),wp=curWp();
+  for(const id in mk){mk[id].remove();delete mk[id]}
+  const all=[...P];if(S.pin)all.push(pinPlace());
+  for(const p of all){if(p.lat==null)continue;const on=wp&&p.id===wp.id;if(p.id==='pin'&&!on)continue;mk[p.id]=L.marker([p.lat,p.lng],{icon:blipIcon(p,on),zIndexOffset:on?1000:0}).addTo(LM).on('click',()=>{S.wp=p.id;save();updMap();rPlaces();toast('Obiettivo impostato',p.n)})}
+  drawRoute(wp);rObj();}
+let rInfo=null,rKey='',rLine=null,rBusy=false;
+function drawRoute(wp){if(!LM)return;
+  if(!me||!wp||wp.lat==null){if(route){route.remove();route=null}if(rLine){rLine.remove();rLine=null}rInfo=null;return}
+  const key=wp.id+':'+wp.lat.toFixed(4)+','+wp.lng.toFixed(4);
+  const moved=rKey.startsWith(key+'@')?km(me,JSON.parse(rKey.split('@')[1])):1e9;
+  if(rLine&&moved<0.3)return;
+  if(route){route.remove();route=null}
+  route=L.polyline([[me.lat,me.lng],[wp.lat,wp.lng]],{color:'#ff2e88',weight:4,dashArray:'2 12',lineCap:'round',opacity:rLine?0:.9}).addTo(LM);
+  if(rBusy)return;rBusy=true;const from={lat:me.lat,lng:me.lng};
+  fetch(`https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${wp.lng},${wp.lat}?overview=full&geometries=geojson`).then(r=>r.json()).then(j=>{
+    const rt=j&&j.routes&&j.routes[0];if(!rt)throw 0;
+    if(rLine)rLine.remove();
+    const ll=rt.geometry.coordinates.map(c=>[c[1],c[0]]);
+    rLine=L.layerGroup([L.polyline(ll,{color:'#05020f',weight:10,opacity:.8}),L.polyline(ll,{color:'#ff2e88',weight:6})]).addTo(LM);
+    if(route){route.remove();route=null}
+    rInfo={km:rt.distance/1000,min:Math.round(rt.duration/60)};rKey=key+'@'+JSON.stringify(from);rObj();
+  }).catch(()=>{rInfo=null;rKey=''}).finally(()=>{rBusy=false})}
+function rObj(){const wp=curWp(),el=$('objbox');if(!el||!wp)return;const d=dest(wp);const dist=me&&wp.lat!=null?km(me,wp):null;const rtxt=rInfo&&rKey.startsWith(wp.id+':')?' · '+rInfo.km.toFixed(1).replace('.',',')+' km su strada, circa '+rInfo.min+' min':(dist!=null?' · a '+dist.toFixed(1).replace('.',',')+' km in linea d’aria':'');
+  el.innerHTML=`<span style="font-size:13px;opacity:.8">Obiettivo attivo</span><b>${esc(wp.n)}</b><span style="font-size:14px;opacity:.85">${wp.id==='pin'?'Punto scelto sulla mappa':(wp.addr?esc(wp.addr):'Scrivi l’indirizzo nella lista per poterci navigare')}${rtxt}</span>${d?`<div class="nav2"><a class="gm" href="${esc(gmaps(d))}" target="_blank" rel="noopener">Google Maps</a><a class="wz" href="${esc(wazeL(wp))}" target="_blank" rel="noopener">Waze</a></div>`:''}`}
+function rPlaces(){const P=places(),wp=curWp(),el=$('plist');if(!el)return;
+  el.innerHTML=P.map(p=>`<div class="pl${wp&&p.id===wp.id?' act':''}"><span class="dot" style="background:${BLIP[p.c][0]}"></span><div><b>${esc(p.n)}</b>${(()=>{const n=S.custom.filter(c=>c.p===p.id&&!S.checks['c:'+c.id]).length;return n?` <span class="tag t-off">${n} ${n>1?'missioni':'missione'}</span>`:''})()}${p.addr&&p.lat==null?' <span class="note">· cerco sulla mappa…</span>':''}<input type="text" data-addr="${esc(p.id)}" value="${esc(p.addr)}" placeholder="Indirizzo, es. Via Roma 1, Cuneo" aria-label="Indirizzo di ${esc(p.n)}"><div class="btns"><button data-wp="${esc(p.id)}">Imposta obiettivo</button>${p.lat!=null?`<button data-fly="${esc(p.id)}">Mostra</button>`:''}${dest(p)?`<a href="${esc(gmaps(dest(p)))}" target="_blank" rel="noopener">Maps</a><a href="${esc(wazeL(p))}" target="_blank" rel="noopener">Waze</a>`:''}</div></div>${p.fixed?'<span></span>':`<button class="del" data-delp="${esc(p.id)}" aria-label="Elimina ${esc(p.n)}">×</button>`}</div>`).join('');
+  for(const p of P)if(p.addr&&(p.lat==null||p.ga!==p.addr))geocode(p)}
+function startGeo(){if(!navigator.geolocation){geoErr='Il telefono non fornisce la posizione.';return}
+  if(geoWatch!==null)return;
+  geoWatch=navigator.geolocation.watchPosition(pos=>{geoErr='';const c=pos.coords,first=!me;me={lat:c.latitude,lng:c.longitude};
+    if(LM){if(!meMk){meMk=L.marker([me.lat,me.lng],{icon:meIcon(c.heading),zIndexOffset:2000}).addTo(LM);meAcc=L.circle([me.lat,me.lng],{radius:c.accuracy,color:'#20e3d2',weight:1,fillOpacity:.08}).addTo(LM)}else{meMk.setLatLng([me.lat,me.lng]);if(c.heading!=null&&!isNaN(c.heading))meMk.setIcon(meIcon(c.heading));meAcc.setLatLng([me.lat,me.lng]).setRadius(c.accuracy)}
+      if(first||follow)LM.setView([me.lat,me.lng],first?14:LM.getZoom())}
+    updMap();const g=$('geost');if(g)g.textContent='GPS attivo · precisione '+Math.round(c.accuracy)+' m'},
+   err=>{geoErr=err.code===1?'Posizione negata: abilitala per questo sito nelle impostazioni del browser.':'Posizione non disponibile al momento.';const g=$('geost');if(g)g.textContent=geoErr;geoWatch=null},{enableHighAccuracy:true,maximumAge:5000,timeout:20000})}
+function rMappa(){
+  if(!$('lmap')){
+  $('s-mappa').innerHTML=`<h2>Mappa</h2><p class="lead">Tu sei la freccia bianca. Tocca la mappa per piazzare il segnalino giallo, o scegli un tuo punto. La linea rosa è il percorso su strada: per guidare apri Google Maps o Waze.</p>
+<div class="mapbar"><button id="mecenter">Centra su di me</button><button id="clearpin">Togli segnalino</button><span class="note" id="geost" style="align-self:center">Attivo il GPS…</span></div>
+<div class="mapgrid"><div><div id="lmap"></div><div class="radarw" style="margin-top:12px"><div class="obj" id="objbox" style="margin-top:0"></div></div></div>
+<div class="card"><h3>I tuoi punti</h3><div id="plist"></div>
+<div class="addp"><input type="text" id="pn" maxlength="60" placeholder="Nome (es. Palestra)" aria-label="Nome del punto"><input type="text" id="pa" maxlength="200" placeholder="Indirizzo" aria-label="Indirizzo"><select id="pc" aria-label="Tipo">${Object.entries(BLIP).map(([k,v])=>`<option value="${k}">${v[1]}</option>`).join('')}</select><button class="act" id="padd">Aggiungi</button></div>
+<p class="note">Per Lidl e cassonetto abiti, Maps cerca quello più vicino a te. Per vederli sulla mappa scrivi l’indirizzo preciso. Mappa © OpenStreetMap, © CARTO. Percorsi: OSRM. Indirizzi: Nominatim.</p></div></div>`;
+  if(window.L){LM=L.map('lmap',{zoomControl:true,attributionControl:true}).setView([44.384,7.52],12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd',attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(LM);
+    LM.on('click',e=>{S.pin={lat:+e.latlng.lat.toFixed(6),lng:+e.latlng.lng.toFixed(6)};S.wp='pin';save();updMap();rPlaces();toast('Segnalino piazzato','Tocca Google Maps o Waze per partire')});
+    LM.on('dragstart',()=>{follow=false});}
+  else{$('lmap').innerHTML='<p class="note" style="padding:20px;color:#fff">La mappa non si è caricata: controlla la connessione.</p>'}
+  }
+  rPlaces();setTimeout(()=>{if(LM)LM.invalidateSize();updMap()},60);startGeo();
+}
+const REPO='https://github.com/AntRizz/WedgeCity';
+function fbLink(){const ty=$('fbtype').value,tx=$('fbtxt').value.trim(),tab=(TABS.find(z=>z[0]===cur)||['',''])[1];
+  const title='['+ty+'] '+tab+': '+(tx.split('\n')[0].slice(0,60)||'feedback');
+  const body=tx+'\n\n---\nScheda: '+tab+'\nData: '+new Date().toLocaleString('it-IT')+'\nSchermo: '+innerWidth+'×'+innerHeight;
+  return REPO+'/issues/new?labels=feedback&title='+encodeURIComponent(title)+'&body='+encodeURIComponent(body)}
+function fbUpd(){$('fbsend').href=fbLink();$('fbctx').textContent='Scheda: '+((TABS.find(z=>z[0]===cur)||['',''])[1])}
+$('fbbtn').addEventListener('click',()=>{$('fbwrap').hidden=false;fbUpd();$('fbtxt').focus()});
+$('fbclose').addEventListener('click',()=>{$('fbwrap').hidden=true});
+$('fbwrap').addEventListener('click',e=>{if(e.target.id==='fbwrap')$('fbwrap').hidden=true});
+$('fbtxt').addEventListener('input',fbUpd);$('fbtype').addEventListener('change',fbUpd);
+$('fbsend').addEventListener('click',e=>{if(!$('fbtxt').value.trim()){e.preventDefault();$('fbtxt').focus();return}fbUpd();setTimeout(()=>{$('fbtxt').value='';$('fbwrap').hidden=true;toast('Feedback pronto','Premi Create su GitHub')},300)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('fbwrap').hidden=true});
+let tt=null;
+function toast(t,s){const el=$('toast');el.innerHTML=esc(t)+(s?`<small>${esc(s)}</small>`:'');el.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('on'),1600)}
+function rOggi(){
+  const d=DAYS.find(x=>x.k===view),items=dayItems(d),p=pct(d);
+  const map=DAYS.map(x=>{const q=Math.round(pct(x)*100);return `<button data-day="${x.k}" class="${x.k===view?'sel':''}${x.k>realToday?' fut':''}" style="--p:${q}%" aria-label="${dlabel(x)}, ${q}% completato">${x.g}<small>${DN[x.w]}</small></button>`}).join('');
+  const slots=['Mattina','Giornata','Sera','Tue'].map(s=>{const its=items.filter(x=>x[4]===s);return its.length?`<div class="slot">${s==='Tue'?'Le tue missioni':s}</div>`+its.map(x=>x[0].startsWith('c:')?chkC(S.custom.find(c=>'c:'+c.id===x[0])):chk(x[0],x[1],x[2],x[3])).join(''):''}).join('')+addForm('oggi');
+  $('s-oggi').innerHTML=`<h2>${view===today?'Missioni di oggi':'Missioni del giorno'} · ${dlabel(d)}</h2><p class="lead">La mappa colora ogni giorno in base a quante missioni hai fatto: toccane uno per vederlo o recuperarlo. La serie conta i giorni consecutivi con almeno il 60% fatto, e il giorno in corso non la rompe.</p>
+<div class="map" role="group" aria-label="Mappa dei giorni">${map}</div>
+<div class="grid"><div class="card main"><div class="ring"><b id="dpct">${Math.round(p*100)}%</b><span class="note">della giornata completato · ${items.filter(x=>S.checks[x[0]]).length} di ${items.length} missioni</span></div>${slots}</div>
+<div class="card"><h3>Missioni grandi aperte</h3>${openBig()}<p class="note">Le trovi complete nelle schede Meal prep e Casa.</p></div></div>`;
+}
+function openBig(){
+  const out=[];
+  for(const p of PREPS)if(!S.checks['prep:'+p[0]])out.push(['prep:'+p[0],60,p[1]]);
+  for(const h of HOUSE)for(const q of h.q)if(!S.checks['h:'+q[0]]&&out.length<7)out.push(['h:'+q[0],q[2],q[1]]);
+  return out.slice(0,7).map(x=>chk(x[0],x[1],x[2],'')).join('')||'<p>Tutte completate. Leggenda.</p>';
+}
+function totHTML(){
+  const t=spesaTot(),left=(+S.budget||0)-t.mix;let dd=0,n=0;
+  for(const i of SHOP){if(S.home[i.id])continue;const r=S.real[i.id];if(r!==undefined&&r!==''&&!isNaN(+r)){dd+=(+r)-i.e;n++}}
+  return `<div class="card"><div class="note">Stimato</div><div class="big">${eur(t.est)}</div></div><div class="card"><div class="note">Reale finora</div><div class="big">${eur(t.real)}</div></div><div class="card"><div class="note">Reale − stima</div><div class="big ${n?(dd<=0?'pos':'neg'):''}">${n?(dd>0?'+':'')+eur(dd):'—'}</div></div><div class="card"><div class="note">Ti restano dal budget</div><div class="big ${left>=0?'pos':'neg'}">${eur(left)}</div></div>`;
+}
+function rSpesa(){
+  const blk=tr=>ORD.map(r=>{const its=SHOP.filter(i=>i.t===tr&&REP[i.id]===r);if(!its.length)return'';return `<div class="rep">${r}</div>`+its.map(i=>{const v=S.real[i.id]??'',got=S.checks['sh:'+i.id],hm=S.home[i.id];return `<div class="it${got?' got':''}${hm?' home':''}"><input type="checkbox" data-k="sh:${i.id}" ${got?'checked':''} aria-label="Nel carrello: ${esc(i.n)}"><div class="nm"><b>${esc(i.n)}</b><small>${esc(i.q)}<span class="estm"> · stima ${eur(i.e)}</span> · <span class="tag ${SRC[i.s][1]}">${SRC[i.s][0]}</span>${i.x?' · '+esc(i.x):''}</small><button class="home-b" data-home="${i.id}">${hm?'Lo devo comprare':'Ce l’ho già in casa'}</button></div><div class="est">${eur(i.e)}</div><input type="number" inputmode="decimal" step="0.01" min="0" data-r="${i.id}" value="${esc(v)}" placeholder="reale" aria-label="Costo reale ${esc(i.n)}" ${hm?'disabled':''}></div>`}).join('')}).join('');
+  const e1=SHOP.filter(i=>i.t===1&&!S.home[i.id]).reduce((a,i)=>a+i.e,0),e2=SHOP.filter(i=>i.t===2&&!S.home[i.id]).reduce((a,i)=>a+i.e,0);
+  $('s-spesa').innerHTML=`<h2>Spesa Lidl</h2><p class="lead">In ordine di reparto, come giri nel negozio. Spunta quando metti nel carrello e scrivi il prezzo reale: i totali si aggiornano. Se hai già qualcosa in casa, toglilo dal conto. Scarica Lidl Plus: diverse offerte valgono solo con l’app.</p>
+<div class="tot" id="tots">${totHTML()}</div>
+<div class="row" style="margin-bottom:14px"><label class="note" for="budget">Budget fino al 15/12 (€)</label><input type="number" id="budget" step="1" min="0" value="${esc(S.budget)}" style="max-width:120px"></div>
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,460px),1fr))"><div class="card"><h3>Spesa 1 · venerdì 27 novembre · ${eur(e1)}</h3>${blk(1)}</div><div class="card"><h3>Spesa 2 · sabato 6 dicembre · ${eur(e2)}</h3>${blk(2)}<p class="note" style="margin-top:14px">Da avere in casa: olio extravergine (se manca, ~7 €), sale, alloro, rosmarino, aglio. “Prezzo Lidl rilevato” = prezzo a scaffale trovato online; “Stima” = prezzo tipico da discount, da verificare.</p></div></div>`;
+}
+function rMenu(){
+  $('s-menu').innerHTML=`<h2>Menù fino al 15 dicembre</h2><p class="lead">Colazione ogni giorno: 50 g di avena, 300 ml di latte, 1 frutto. Spuntino: 1 frutto. A pranzo 100 g di pasta o riso e 80 g di legumi da crudi. Olio: un cucchiaio a pasto. Se hai fame aumenta pasta e legumi, non saltare i pasti.</p><div class="card">${DAYS.map(d=>`<div class="day${d.k===today?' today':''}"><div class="dt">${d.g} ${MESI[d.m]}<small>${DN[d.w]}${d.k===today?' · oggi':''}</small></div><div><p class="meal"><span>Pranzo</span>${esc(PRANZO[d.k])}</p><p class="meal"><span>Cena</span>${esc(C[d.k])}</p>${P[d.k]?`<span class="prep">${esc(P[d.k])}</span>`:''}</div></div>`).join('')}</div>`;
+}
+function rPrep(){
+  $('s-prep').innerHTML=`<h2>Meal prep</h2><p class="lead">Con poche sessioni cucini per tutta la settimana e la sera scaldi e basta. Ogni sessione vale 60 XP.</p><div class="grid">${PREPS.map(p=>`<div class="card main">${chk('prep:'+p[0],60,p[1],'')}<ol style="margin:8px 0 0;padding-left:20px">${p[2].map(s=>`<li style="margin:6px 0">${esc(s)}</li>`).join('')}</ol></div>`).join('')}
+<div class="card"><h3>Regole del cuoco furbo</h3><ul style="margin:0;padding-left:20px"><li>Uova e sgombro non si preparano prima: 10 minuti la sera.</li><li>Il pane in freezer a fette si tosta direttamente.</li><li>La pasta si cuoce al momento, i legumi sono già pronti.</li><li>Frittata: 2 uova e verdura già cotta, 8 minuti in padella con il coperchio.</li></ul></div></div>`;
+}
+function rRoutine(){
+  $('s-routine').innerHTML=`<h2>Routine sana</h2><p class="lead">La giornata tipo. Ogni giorno la trovi da spuntare nella scheda Oggi, divisa tra mattina, giornata e sera.</p><div class="grid"><div class="card main"><h3>Giornata tipo</h3>${ROUT.map(r=>`<p class="meal"><span>${esc(r.t)}</span>${esc(r.n)}</p>`).join('')}</div>
+<div class="card"><h3>Settimana</h3>${[1,2,3,4,5,6,0].map(w=>`<p class="meal"><span>${DN[w]}</span>${esc(ZONE[w])}${TRAIN[w]?' · <b>allenamento</b>':''}${(w===1||w===5)?' · pesata':''}</p>`).join('')}</div>
+<div class="card main"><h3>La tua sera (esci alle 17:30)</h3>
+<p class="meal"><span>18:00</span>Rientro · lun, mer, ven allenamento fino alle 18:25</p>
+<p class="meal"><span>18:25</span><b class="pos">Tempo libero fino alle 19:15</b> (dalle 18:00 nei giorni senza allenamento)</p>
+<p class="meal"><span>19:15</span>Casa: 10 minuti + zona del giorno</p>
+<p class="meal"><span>19:40</span>Cena: scaldi il meal prep</p>
+<p class="meal"><span>20:10</span><b class="pos">Tempo libero fino alle 21:10</b></p>
+<p class="meal"><span>21:10</span>Inglese</p>
+<p class="meal"><span>21:40</span>Prepari domani (10 minuti)</p>
+<p class="meal"><span>21:50</span><b class="pos">Libero senza schermi</b>: doccia, lettura, musica</p>
+<p class="meal"><span>22:30</span>A letto</p>
+<p class="note">Circa 2 ore e 20 libere nei giorni di allenamento, 2 ore e 45 negli altri. Nel weekend le pulizie grosse, poi libero.</p></div>
+<div class="card main"><h3>Piano sveglia 6:15</h3><ul style="margin:0;padding-left:20px"><li>Sveglia sempre alle 6:15, anche nel weekend al massimo alle 7:15.</li><li>Telefono in carica lontano dal letto: per spegnerlo devi alzarti. Niente “posponi”.</li><li>Appena in piedi accendi tutte le luci e bevi un bicchiere d’acqua.</li><li>Se oggi ti addormenti tardi, sposta l’ora di andare a letto di 15 minuti prima ogni 2 sere fino alle 22:30. La sveglia invece non si sposta.</li><li>Niente caffè dopo le 15, niente cena abbondante dopo le 21.</li><li>La sera prima prepari tutto: la mattina ti servono solo 45 minuti.</li></ul></div>
+<div class="card"><h3>Allenamento a corpo libero (lun, mer, ven)</h3><p class="meal">3 giri di: 15 squat, 8–12 piegamenti (anche sulle ginocchia), 10 affondi per gamba, 30 secondi di plank. 1 minuto di pausa tra i giri. Quando diventa facile, aggiungi ripetizioni.</p><p class="note">Insieme ai passi quotidiani aiuta a perdere grasso mantenendo il muscolo.</p></div>
+<div class="card"><h3>Le 4 regole d’oro</h3><ul style="margin:0;padding-left:20px"><li>Pranzo sempre da casa: niente bar.</li><li>Acqua del rubinetto, 1,5–2 litri al giorno.</li><li>Verdura a pranzo e a cena.</li><li>Stesso orario di sonno, anche nel weekend (al massimo un’ora di differenza).</li></ul></div></div>`;
+}
+function rCasa(){
+  $('s-casa').innerHTML=`<h2>Casa</h2><p class="lead">Le due missioni principali sono per il weekend del 28–29 novembre: sabato mattina la pulizia, poi il cambio armadio mentre girano le lavatrici. Ogni giorno c’è anche la zona del giorno (scheda Oggi).</p><div class="grid">${HOUSE.map(h=>{const dn=h.q.filter(q=>S.checks['h:'+q[0]]).length;return `<div class="card${h.m?' main':''}"><h3>${esc(h.g)}</h3><p class="note" style="margin:0 0 6px">${esc(h.w)} · ${dn}/${h.q.length} fatte</p>${h.q.map(q=>chk('h:'+q[0],q[2],q[1],'')).join('')}</div>`}).join('')}
+${customCard('casa','Le tue missioni di casa')}<div class="card"><h3>Trucchi per le lavatrici infinite</h3><ul style="margin:0;padding-left:20px"><li>Fai partire la lavatrice prima di pulire: lavora lei mentre lavori tu.</li><li>Stendi subito: i panni stesi presto non vanno stirati.</li><li>Nei giorni del cambio armadio, un carico alla volta.</li><li>Lana e capi delicati: sempre in piano, mai sul termosifone.</li></ul></div></div>`;
+}
+function rPremi(){
+  const c=coins();
+  $('s-premi').innerHTML=`<h2>Negozio premi</h2><p class="lead">Ogni 10 XP guadagni un gettone. Spendili qui in premi veri che non costano soldi (tranne l’ultimo, che esce dal budget avanzato). Hai <b class="coin">${c} gettoni</b>.</p><div class="card">${PREMI.map(p=>{const n=Math.round((S.spent[p.id]||0)/p.c);return `<div class="shop"><div><b>${esc(p.n)}</b><div class="note"><span class="coin">${p.c}</span> gettoni${n?' · riscattato '+n+(n>1?' volte':' volta'):''}</div></div><button class="act" data-buy="${p.id}" ${c<p.c?'disabled':''}>Riscatta</button></div>`}).join('')}</div>${Object.keys(S.spent).length?'<p style="margin-top:12px"><button class="act ghost" id="undoBuy">Annulla l’ultimo riscatto</button></p>':''}`;
+}
+let lastBuy=null;
+function rPeso(){
+  const W=[...S.weights].sort((a,b)=>a.d<b.d?-1:1);
+  const first=W[0],last=W[W.length-1];
+  $('s-peso').innerHTML=`<h2>Peso</h2><p class="lead">Pesati lunedì e venerdì, a digiuno, dopo il bagno, sempre sulla stessa bilancia. Conta l’andamento, non il singolo numero.</p>
+<div class="tot"><div class="card"><div class="note">Ultima pesata</div><div class="big">${last?esc(last.kg.toFixed(1).replace('.',','))+' kg':'—'}</div></div><div class="card"><div class="note">Dall’inizio</div><div class="big ${first&&last&&last.kg<=first.kg&&W.length>1?'pos':''}">${first&&last&&W.length>1?((last.kg-first.kg>0?'+':'')+(last.kg-first.kg).toFixed(1).replace('.',','))+' kg':'—'}</div></div><div class="card"><div class="note">Grasso corporeo</div><div class="big">${last&&last.bf?esc(String(last.bf).replace('.',','))+' %':'—'}</div></div></div>
+<div class="card" style="margin-bottom:14px"><div class="fig"><svg id="wchart" role="img" aria-label="Andamento del peso"></svg></div></div>
+<div class="card" style="margin-bottom:14px"><h3>Nuova pesata</h3><div class="row"><div style="flex:1 1 150px"><label class="note" for="wd">Data</label><input type="date" id="wd" value="${realToday}"></div><div style="flex:1 1 120px"><label class="note" for="wk">Peso (kg)</label><input type="number" id="wk" step="0.1" min="30" max="250" inputmode="decimal"></div><div style="flex:1 1 120px"><label class="note" for="wb">Grasso % (facoltativo)</label><input type="number" id="wb" step="0.1" min="3" max="60" inputmode="decimal"></div><button class="act" id="wadd" style="align-self:flex-end">Salva pesata</button></div></div>
+<div class="card"><table><thead><tr><th>Data</th><th class="n">Peso</th><th class="n">Grasso</th><th></th></tr></thead><tbody>${W.slice().reverse().map(w=>`<tr><td>${esc(w.d)}</td><td class="n">${esc(w.kg.toFixed(1).replace('.',','))} kg</td><td class="n">${w.bf?esc(String(w.bf).replace('.',','))+' %':''}</td><td class="n"><button class="act ghost" data-del="${esc(w.d)}">Elimina</button></td></tr>`).join('')||'<tr><td colspan="4" class="note">Nessuna pesata ancora.</td></tr>'}</tbody></table></div>`;
+  const s=$('wchart');
+  const draw=()=>{const Wd=s.clientWidth,H=s.clientHeight;if(!Wd)return;if(W.length<1){s.innerHTML=`<text x="${Wd/2}" y="${H/2}" text-anchor="middle" fill="currentColor" font-size="14">Aggiungi la prima pesata</text>`;return}
+    const t0=new Date(W[0].d).getTime(),t1=Math.max(new Date(W[W.length-1].d).getTime(),new Date('2026-12-15').getTime());
+    const kgs=W.map(w=>w.kg),lo=Math.floor(Math.min(...kgs)-1),hi=Math.ceil(Math.max(...kgs)+1);
+    const pl=44,pr=16,pt=20,pb=30,X=t=>pl+(Wd-pl-pr)*((t-t0)/((t1-t0)||1)),Y=k=>pt+(H-pt-pb)*(1-(k-lo)/((hi-lo)||1));
+    let g='';for(let k=lo;k<=hi;k++){if((hi-lo)>8&&k%2)continue;g+=`<line x1="${pl}" x2="${Wd-pr}" y1="${Y(k)}" y2="${Y(k)}" stroke="currentColor" stroke-opacity=".12"/><text x="${pl-8}" y="${Y(k)+4}" text-anchor="end" font-size="12" fill="currentColor" fill-opacity=".7">${k}</text>`}
+    const pts=W.map(w=>[X(new Date(w.d).getTime()),Y(w.kg)]);
+    g+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#ff2e88" stroke-width="3" stroke-linejoin="round"/>`;
+    g+=pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="#ff2e88"/>`).join('');
+    const lp=pts[pts.length-1];g+=`<text x="${Math.min(lp[0],Wd-60)}" y="${lp[1]-12}" font-size="13" font-weight="700" fill="currentColor">${W[W.length-1].kg.toFixed(1).replace('.',',')} kg</text>`;
+    const fd=d=>{const x=new Date(d);return x.getDate()+' '+MESI[x.getMonth()]};
+    g+=`<text x="${pl}" y="${H-8}" font-size="12" fill="currentColor" fill-opacity=".7">${fd(W[0].d)}</text><text x="${Wd-pr}" y="${H-8}" text-anchor="end" font-size="12" fill="currentColor" fill-opacity=".7">15 dic</text>`;
+    s.innerHTML=g};
+  if(window.wro)window.wro.disconnect();window.wro=new ResizeObserver(draw);window.wro.observe(s);
+}
+function regXP(){for(const d of DAYS)for(const x of dayItems(d))xpOf[x[0]]=x[1];for(const p of PREPS)xpOf['prep:'+p[0]]=60;for(const h of HOUSE)for(const q of h.q)xpOf['h:'+q[0]]=q[2];for(const i of SHOP)xpOf['sh:'+i.id]=2;for(const d of DAYS){for(const x of HOBBY_D)xpOf['hb:'+d.k+':'+x[0]]=x[2];for(const x of LAV_D)xpOf['lv:'+d.k+':'+x[0]]=x[2]}for(const g of HOBBY)for(const q of g.q)xpOf['ho:'+q[0]]=q[2];for(const g of LAVORO)for(const q of g.q)xpOf['wk:'+q[0]]=q[2]}
+const R={mappa:rMappa,hobby:rHobby,lavoro:rLavoro,oggi:rOggi,spesa:rSpesa,menu:rMenu,prep:rPrep,routine:rRoutine,casa:rCasa,premi:rPremi,peso:rPeso};
+let cur='oggi';
+function show(id){if(!R[id])id='oggi';cur=id;const g=GROUPS.find(x=>x[2].includes(id));lastIn[g[0]]=id;
+  for(const[t]of TABS)$('s-'+t).hidden=t!==id;
+  $('dock').innerHTML=GROUPS.map(x=>`<button data-grp="${x[0]}" ${x===g?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${x[3]}</svg>${x[1]}</button>`).join('');
+  $('subnav').hidden=g[2].length<2;$('tabs').innerHTML=g[2].map(t=>`<button role="tab" data-tab="${t}" aria-selected="${t===id}">${TABS.find(z=>z[0]===t)[1]}</button>`).join('');
+  R[id]();hud();try{if(location.hash!=='#'+id)history.replaceState(null,'','#'+id)}catch(e){}}
+
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){show(b.dataset.tab)}});
+$('dock').addEventListener('click',e=>{const b=e.target.closest('[data-grp]');if(!b)return;const g=GROUPS.find(x=>x[0]===b.dataset.grp);show(lastIn[g[0]]||g[2][0]);window.scrollTo(0,g[0]==='oggi'?0:document.querySelector('header').offsetHeight)});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.k){const k=t.dataset.k;S.checks[k]=t.checked;const l=t.closest('.q,.it');if(l)l.classList.toggle(l.classList.contains('it')?'got':'done',t.checked);save();
+    if(t.checked&&!k.startsWith('sh:'))toast('Missione completata','+'+xpFor(k)+' XP');
+    if(cur==='oggi'){const y=window.scrollY;rOggi();window.scrollTo(0,y)}else if(R[cur]&&cur!=='spesa'){const y=window.scrollY;R[cur]();window.scrollTo(0,y)}hud()}
+  else if(t.dataset.addr){if(!S.places)S.places=DEF_PLACES.map(p=>({...p}));const p=S.places.find(x=>x.id===t.dataset.addr);if(p){p.addr=t.value.trim().slice(0,200);p.lat=null;p.lng=null;save();rPlaces();updMap()}}
+  else if(t.dataset.r){const v=t.value.trim().replace(',','.');if(v==='')delete S.real[t.dataset.r];else S.real[t.dataset.r]=v;save();$('tots').innerHTML=totHTML();hud()}
+  else if(t.id==='budget'){S.budget=+t.value||0;save();$('tots').innerHTML=totHTML();hud()}});
+document.addEventListener('click',e=>{const t=e.target.closest('button,.blip');if(!t)return;
+  if(t.dataset.day){view=t.dataset.day;rOggi()}
+  else if(t.dataset.fly){const p=places().find(x=>x.id===t.dataset.fly);if(p&&LM){follow=false;LM.setView([p.lat,p.lng],15)}}
+  else if(t.id==='mecenter'){follow=true;if(me&&LM)LM.setView([me.lat,me.lng],15);else startGeo()}
+  else if(t.id==='clearpin'){S.pin=null;if(S.wp==='pin')S.wp='';save();updMap();rPlaces()}
+  else if(t.dataset.wp){S.wp=t.dataset.wp;save();updMap();rPlaces();{const q=curWp();if(LM&&me&&q&&q.lat!=null){follow=false;LM.fitBounds([[me.lat,me.lng],[q.lat,q.lng]],{padding:[50,50],maxZoom:16});$('lmap').scrollIntoView({behavior:'smooth',block:'center'})}}const p=places().find(x=>x.id===S.wp);if(p)toast('Obiettivo impostato',p.n)}
+  else if(t.id==='bkcopy'){const s=JSON.stringify(S);navigator.clipboard.writeText(s).then(()=>toast('Backup copiato','Incollalo nella nuova app')).catch(()=>{$('bktxt').hidden=false;$('bktxt').value=s;$('bktxt').select();toast('Copia manuale','Seleziona il testo e copialo')})}
+  else if(t.id==='bkimp'){try{const d=JSON.parse($('bkin').value);if(!d||typeof d!=='object'||!d.checks)throw 0;S=norm(d);save();$('bkin').value='';show(cur);toast('Backup importato','Bentornato, Antonio')}catch(err){toast('Backup non valido','Controlla di averlo incollato tutto')}}
+  else if(t.id==='bkshow'){$('bktxt').hidden=false;$('bktxt').value=JSON.stringify(S);$('bktxt').select()}
+  else if(t.id==='padd'){const n=$('pn').value.trim(),a=$('pa').value.trim();if(!n){$('pn').focus();return}if(!S.places)S.places=DEF_PLACES.map(p=>({...p}));const id='p'+Date.now().toString(36);S.places.push({id,n:n.slice(0,60),addr:a.slice(0,200),c:$('pc').value in BLIP?$('pc').value:'altro',fixed:false});S.wp=id;save();rPlaces();updMap();toast('Punto aggiunto',n)}
+  else if(t.dataset.delp){if(!S.places)S.places=DEF_PLACES.map(p=>({...p}));S.places=S.places.filter(p=>p.id!==t.dataset.delp);if(S.wp===t.dataset.delp)S.wp='';save();rPlaces();updMap()}
+  else if(t.dataset.add){const a=t.dataset.add,inp=$('new-'+a),n=inp.value.trim();if(!n){inp.focus();return}S.custom.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),n:n.slice(0,140),a,d:a==='oggi'?view:'',xp:+$('xp-'+a).value||10,p:$('pl-'+a)?$('pl-'+a).value:''});save();const y=window.scrollY;R[cur]();window.scrollTo(0,y);toast('Missione aggiunta',n.slice(0,40));const ni=$('new-'+a);if(ni)ni.focus()}
+  else if(t.dataset.delc){const id=t.dataset.delc;S.custom=S.custom.filter(c=>c.id!==id);delete S.checks['c:'+id];save();const y=window.scrollY;R[cur]();window.scrollTo(0,y);hud()}
+  else if(t.dataset.home){const id=t.dataset.home;if(S.home[id])delete S.home[id];else S.home[id]=true;save();const y=window.scrollY;rSpesa();window.scrollTo(0,y);hud()}
+  else if(t.dataset.buy){const p=PREMI.find(x=>x.id===t.dataset.buy);if(coins()<p.c)return;S.spent[p.id]=(S.spent[p.id]||0)+p.c;lastBuy=p.id;save();toast('Premio sbloccato',p.n.slice(0,40));rPremi();hud()}
+  else if(t.id==='undoBuy'){const id=lastBuy||Object.keys(S.spent).pop();const p=PREMI.find(x=>x.id===id);if(p&&S.spent[id]){S.spent[id]-=p.c;if(S.spent[id]<=0)delete S.spent[id]}lastBuy=null;save();rPremi();hud()}
+  else if(t.id==='wadd'){const d=$('wd').value,kg=parseFloat(String($('wk').value).replace(',','.')),bf=parseFloat(String($('wb').value).replace(',','.'));if(!d||!(kg>30&&kg<250)){$('wk').focus();return}S.weights=S.weights.filter(w=>w.d!==d);const o={d,kg};if(bf>0&&bf<70)o.bf=bf;S.weights.push(o);save();rPeso();toast('Pesata salvata',kg.toFixed(1).replace('.',',')+' kg')}
+  else if(t.dataset.del){S.weights=S.weights.filter(w=>w.d!==t.dataset.del);save();rPeso()}});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('blip')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));return}if(e.key==='Enter'&&e.target.id&&e.target.id.startsWith('new-')){e.preventDefault();const b=document.querySelector(`[data-add=${e.target.id.slice(4)}]`);if(b)b.click()}});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+regXP();
+const norm=d=>({checks:d.checks||{},real:d.real||{},home:d.home||{},spent:d.spent||{},weights:Array.isArray(d.weights)?d.weights.filter(w=>w&&typeof w.d==='string'&&typeof w.kg==='number'):[],budget:typeof d.budget==='number'?d.budget:100,places:Array.isArray(d.places)?d.places.filter(p=>p&&typeof p.id==='string'&&typeof p.n==='string').map(p=>({id:p.id,n:String(p.n).slice(0,60),addr:String(p.addr||'').slice(0,200),c:BLIP[p.c]?p.c:'altro',fixed:!!p.fixed,lat:typeof p.lat==='number'?p.lat:null,lng:typeof p.lng==='number'?p.lng:null,ga:typeof p.ga==='string'?p.ga:''})):null,pin:d.pin&&typeof d.pin.lat==='number'&&typeof d.pin.lng==='number'?{lat:d.pin.lat,lng:d.pin.lng}:null,wp:typeof d.wp==='string'?d.wp:'',custom:Array.isArray(d.custom)?d.custom.filter(c=>c&&typeof c.id==='string'&&typeof c.n==='string').map(c=>({id:c.id,n:c.n.slice(0,140),a:['oggi','casa','hobby','lavoro'].includes(c.a)?c.a:'oggi',d:typeof c.d==='string'?c.d:'',xp:[10,25,50].includes(c.xp)?c.xp:10,p:typeof c.p==='string'?c.p:''})):[]});
+try{const l=JSON.parse(localStorage.getItem('m15')||'null');if(l)S=norm(l)}catch(e){}
+show(location.hash.slice(1)||'oggi');
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+$('sync').textContent='I dati sono salvati su questo telefono. Fai ogni tanto un backup qui sotto.';
+}
+</script>
+</body>
+</html>
