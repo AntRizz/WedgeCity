@@ -100,7 +100,7 @@ button.ghost{background:transparent;color:var(--pink);border:1px solid var(--pin
 .note{font-size:14px;color:var(--mut)}
 .scroll{overflow-x:auto}
 section[hidden]{display:none}
-.add{display:grid;grid-template-columns:minmax(0,1fr) 130px auto;gap:8px;margin-top:12px}.add input,.add select{font:16px Inter,sans-serif;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}.cw{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:start;border-top:1px dashed var(--line)}.cw .q{border-top:0}.del{background:none;border:0;color:var(--mut);font-size:22px;min-height:44px;cursor:pointer}.del:hover{color:var(--warn)}@media(max-width:600px){.add{grid-template-columns:minmax(0,1fr) 110px}.add button{grid-column:1/-1}}
+.add{display:grid;grid-template-columns:minmax(0,1fr) 130px auto;gap:8px;margin-top:12px}.add input,.add select{font:16px Inter,sans-serif;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}.cw{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px;align-items:start;border-top:1px dashed var(--line)}.cw .q{border-top:0}.del{background:none;border:0;color:var(--mut);font-size:22px;min-height:44px;cursor:pointer}.del:hover{color:var(--warn)}@media(max-width:600px){.add{grid-template-columns:minmax(0,1fr) 110px}.add button{grid-column:1/-1}}
 .mapgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px}
 .radarw{background:#0d0820;border-radius:20px;padding:14px;color:#fff}
 .radar{display:block;width:100%;max-width:420px;aspect-ratio:1;margin:auto}
@@ -162,6 +162,11 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 #lfwrap{position:fixed;inset:0;z-index:1200;background:rgba(10,4,24,.6);display:grid;place-items:end center;padding:16px}#lfwrap[hidden]{display:none}
 #lfbox{width:min(480px,100%);background:var(--panel);color:var(--ink);border-radius:18px;padding:18px;border:2px solid #ff2e88;display:grid;gap:10px;margin-bottom:calc(70px + env(safe-area-inset-bottom))}
 #lfbox input,#lfbox select{font:16px Inter,sans-serif;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+button.rm{background:none;border:1px solid var(--line);color:var(--teal);font:600 12px Inter,sans-serif;min-height:34px;padding:0 10px;border-radius:9px;cursor:pointer;align-self:center;white-space:nowrap}
+#rmwrap{position:fixed;inset:0;z-index:1200;background:rgba(10,4,24,.6);display:grid;place-items:end center;padding:16px}#rmwrap[hidden]{display:none}
+#rmbox{width:min(480px,100%);background:var(--panel);color:var(--ink);border-radius:18px;padding:18px;border:2px solid #20e3d2;margin-bottom:calc(70px + env(safe-area-inset-bottom))}
+.rmgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rmgrid .act{display:flex;flex-direction:column;justify-content:center;min-height:56px}.rmgrid small{font-weight:500;font-size:12px;opacity:.9}
+#rmbox input[type=date]{font:16px Inter,sans-serif;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 #toast{bottom:calc(150px + env(safe-area-inset-bottom))!important;position:fixed;left:50%;bottom:24px;transform:translate(-50%,calc(100% + 48px));visibility:hidden;background:linear-gradient(90deg,#2b0f5c,#ff2e88 60%,#ff8a3d);color:#fff;border-radius:14px;padding:12px 20px;font:400 22px/1.1 Anton,Impact,sans-serif;letter-spacing:.6px;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:transform .35s cubic-bezier(.2,1.4,.4,1);z-index:9;white-space:nowrap;pointer-events:none}
 #toast small{display:block;font:600 13px Inter,sans-serif;color:#b8ffd6;letter-spacing:0}
 #toast.on{transform:translate(-50%,0);visibility:visible}
@@ -214,6 +219,7 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 <button id="fbbtn" aria-label="Lascia un feedback">Feedback</button>
 <div id="fbwrap" hidden><div id="fbbox" role="dialog" aria-modal="true" aria-labelledby="fbt"><h3 id="fbt">Feedback</h3><p class="note" style="margin-top:0">Scrivi cosa cambiare o cosa non va. Si apre GitHub con il commento già pronto: premi “Create” e finisce nel database dei feedback, che Claude legge.</p><div class="row" style="margin-bottom:8px"><select id="fbtype" aria-label="Tipo"><option value="Idea">Idea</option><option value="Bug">Qualcosa non va</option><option value="Contenuto">Contenuto da cambiare</option></select><span class="note" id="fbctx"></span></div><textarea id="fbtxt" maxlength="2000" placeholder="Es. nella scheda Spesa vorrei…"></textarea><div class="row" style="margin-top:10px;justify-content:flex-end"><button class="act ghost" id="fbclose">Chiudi</button><a class="act" id="fbsend" href="#" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">Invia su GitHub</a></div></div></div>
 <div id="lfwrap" hidden><div id="lfbox" role="dialog" aria-modal="true" aria-labelledby="lft"><h3 id="lft">Nuovo luogo</h3><p class="note" style="margin-top:0">Salvato solo su questo telefono e incluso nel backup.</p><input type="text" id="lfname" maxlength="60" placeholder="Nome (es. Casa, Palestra)"><select id="lfcat" aria-label="Categoria"></select><input type="text" id="lfnote" maxlength="200" placeholder="Note (facoltative)"><div class="row" style="justify-content:flex-end"><button class="act ghost" id="lfclose">Annulla</button><button class="act" id="lfsave">Salva luogo</button></div></div></div>
+<div id="rmwrap" hidden><div id="rmbox" role="dialog" aria-modal="true" aria-labelledby="rmt"><h3 id="rmt">Rimanda a…</h3><p class="note" id="rmname" style="margin-top:0"></p><div id="rmopts" class="rmgrid"></div><div class="row" style="margin-top:10px"><input type="date" id="rmdate" aria-label="Scegli una data" style="flex:1 1 160px"><button class="act" id="rmgo">Sposta</button></div><div class="row" id="rmextra" style="margin-top:8px"></div><div class="row" style="justify-content:flex-end;margin-top:8px"><button class="act ghost" id="rmclose">Chiudi</button></div></div></div>
 <nav id="dock" aria-label="Sezioni"></nav>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -369,7 +375,7 @@ const PREMI=[
 const K=()=>{const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')};
 let today=K();const realToday=today;if(today<DAYS[0].k)today=DAYS[0].k;if(today>DAYS[DAYS.length-1].k)today=DAYS[DAYS.length-1].k;
 let view=today;
-let S={checks:{},real:{},home:{},spent:{},weights:[],budget:100,custom:[],luoghi:[],coord:{}};
+let S={checks:{},real:{},home:{},spent:{},weights:[],budget:100,custom:[],luoghi:[],coord:{},moved:{}};
 let ref=null,saving=false,pending=false;
 const eur=v=>'€ '+v.toFixed(2).replace('.',',');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -385,15 +391,46 @@ function save(){
   Promise.resolve(ref.set(JSON.parse(JSON.stringify(S)))).then(()=>{$('sync').textContent='Salvato nel tuo account ✓'}).catch(()=>{$('sync').textContent='Salvataggio online non riuscito: i dati restano su questo dispositivo.'}).finally(()=>{saving=false;if(pending){pending=false;save()}});
 }
 const xpOf={};
-function dayItems(d){
+function rawItems(d){
   const a=[['pr:'+d.k,15,'Pranzo: '+PRANZO[d.k],'100 g di pasta o riso, 80 g di legumi da crudi, verdura','Giornata'],['ce:'+d.k,15,'Cena: '+C[d.k],'150–200 g di verdura sempre','Sera']];
   if(P[d.k])a.push(['mp:'+d.k,40,'Meal prep',P[d.k],'Sera']);
   for(const r of ROUT)a.push(['r:'+d.k+':'+r.id,r.xp,r.t+' · '+r.n,'',SLOT[r.id]]);
   if(TRAIN[d.w])a.push(['r:'+d.k+':train',30,'Allenamento',TRAIN[d.w],'Sera']);
   if(d.w===1||d.w===5)a.push(['r:'+d.k+':peso',10,'Pesata','A digiuno, dopo il bagno: segnala nella scheda Peso','Mattina']);
   a.push(['z:'+d.k,25,'Zona casa del giorno',ZONE[d.w],'Sera']);
-  for(const c of S.custom)if(c.a==='oggi'&&c.d===d.k)a.push(['c:'+c.id,c.xp,c.n,'','Tue']);
   return a;
+}
+const srcDay=k=>k.split(':')[1];                     // pr:2026-11-28, r:2026-11-28:sveglia …
+const DAY=k=>DAYS.find(x=>x.k===k);
+const fmtD=k=>{const d=DAY(k);return d?dlabel(d):k};
+function dayItems(d){
+  const a=rawItems(d).filter(x=>!S.moved[x[0]]||S.moved[x[0]]===d.k);
+  for(const k in S.moved){if(S.moved[k]!==d.k||srcDay(k)===d.k)continue;const s=DAY(srcDay(k));if(!s)continue;const it=rawItems(s).find(x=>x[0]===k);if(it)a.push([it[0],it[1],it[2],'Rimandata da '+dlabel(s)+(it[3]?' · '+it[3]:''),it[4]])}
+  for(const c of S.custom)if(c.d===d.k)a.push(['c:'+c.id,c.xp,c.n,'','Tue']);
+  return a;
+}
+function addDays(k,n){const [y,m,g]=k.split('-').map(Number);const d=new Date(y,m-1,g+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+let rmKey='';
+function openRm(key){
+  rmKey=key;const isC=key.startsWith('c:');const c=isC&&S.custom.find(x=>'c:'+x.id===key);
+  const cur=isC?(c&&c.d)||'':(S.moved[key]||srcDay(key));
+  const base=cur&&cur>realToday?cur:(view>realToday?view:realToday);
+  const last=DAYS[DAYS.length-1].k;
+  const nextW=w=>{let k=addDays(base,1);for(let i=0;i<7;i++){const dd=new Date(k);if(dd.getDay()===w)return k;k=addDays(k,1)}return k};
+  const opts=[['Domani',addDays(base,1)],['Dopodomani',addDays(base,2)],['Sabato',nextW(6)],['Lunedì',nextW(1)]].filter((o,i,arr)=>o[1]<=last&&o[1]!==cur&&arr.findIndex(z=>z[1]===o[1])===i);
+  const name=isC?(c?c.n:''):((rawItems(DAY(srcDay(key)))||[]).find(x=>x[0]===key)||['','',''])[2];
+  $('rmname').textContent=name+(cur?' · ora: '+fmtD(cur):'');
+  $('rmopts').innerHTML=opts.map(o=>`<button class="act" data-rmto="${o[1]}">${o[0]}<small>${esc(fmtD(o[1]))}</small></button>`).join('')||'<p class="note">Non ci sono altri giorni fino al 15 dicembre.</p>';
+  $('rmdate').min=addDays(realToday,0)<DAYS[0].k?DAYS[0].k:realToday;$('rmdate').max=last;$('rmdate').value='';
+  $('rmextra').innerHTML=(!isC&&S.moved[key]?'<button class="act ghost" data-rmto="__orig">Riporta al giorno originale</button>':'')+(isC&&c&&c.a!=='oggi'&&c.d?'<button class="act ghost" data-rmto="__none">Togli dal calendario</button>':'');
+  $('rmwrap').hidden=false;
+}
+function doRm(to){
+  const key=rmKey;if(!key)return;
+  if(key.startsWith('c:')){const c=S.custom.find(x=>'c:'+x.id===key);if(!c)return;c.d=to==='__none'?'':to}
+  else{if(to==='__orig'||to===srcDay(key))delete S.moved[key];else S.moved[key]=to}
+  save();$('rmwrap').hidden=true;const y=window.scrollY;R[cur]();window.scrollTo(0,y);hud();
+  toast(to==='__orig'?'Riportata al suo giorno':to==='__none'?'Tolta dal calendario':'Rimandata',to.startsWith('__')?'':fmtD(to));
 }
 function pct(d){const a=dayItems(d);return a.filter(x=>S.checks[x[0]]).length/a.length}
 function chk(key,xp,title,sub){
@@ -418,7 +455,7 @@ function hud(){
   const n=Math.max(0,Math.floor(sv/22));
   $('pag').textContent=sv>=22?'Pagnotta di Claude ×'+n+' ✓':'Pagnotta di Claude: '+Math.max(0,sv).toFixed(0)+'/22 €';
 }
-function chkC(c){const p=c.p&&places().find(x=>x.id===c.p);return `<div class="cw">${chk('c:'+c.id,c.xp,c.n,p?'Luogo: '+p.n:'')}${p&&dest(p)?`<a class="go" style="grid-column:1/-1;padding-left:36px;margin-top:-6px" href="${esc(gmaps(dest(p)))}" target="_blank" rel="noopener">Portami lì</a>`:''}<button class="del" data-delc="${esc(c.id)}" aria-label="Elimina missione">×</button></div>`}
+function chkC(c){const p=c.p&&places().find(x=>x.id===c.p);const dl=c.d&&c.a!=='oggi'?'Pianificata: '+fmtD(c.d):'';return `<div class="cw">${chk('c:'+c.id,c.xp,c.n,[p?'Luogo: '+p.n:'',dl].filter(Boolean).join(' · '))}${S.checks['c:'+c.id]?'<span></span>':`<button class="rm" data-rm="c:${esc(c.id)}">${c.a==='oggi'||c.d?'Rimanda':'Pianifica'}</button>`}${p&&dest(p)?`<a class="go" style="grid-column:1/-1;padding-left:36px;margin-top:-6px" href="${esc(gmaps(dest(p)))}" target="_blank" rel="noopener">Portami lì</a>`:''}<button class="del" data-delc="${esc(c.id)}" aria-label="Elimina missione">×</button></div>`}
 function addForm(a){return `<div class="add"><select id="pl-${a}" aria-label="Luogo (facoltativo)" style="grid-column:1/-1"><option value="">Senza luogo</option>${places().map(p=>`<option value="${esc(p.id)}">Luogo: ${esc(p.n)}</option>`).join('')}</select><input type="text" maxlength="140" id="new-${a}" placeholder="Nuova missione${a==='oggi'?' per questo giorno':''}…" aria-label="Nuova missione"><select id="xp-${a}" aria-label="Grandezza"><option value="10">Piccola · 10 XP</option><option value="25">Media · 25 XP</option><option value="50">Grande · 50 XP</option></select><button class="act" data-add="${a}">Aggiungi</button></div>`}
 function customCard(a,title){const cs=S.custom.filter(c=>c.a===a);return `<div class="card main"><h3>${title}</h3>${cs.map(chkC).join('')||'<p class="note" style="margin:0">Nessuna ancora: scrivila qui sotto.</p>'}${addForm(a)}</div>`}
 function questCard(key,g){const dn=g.q.filter(q=>S.checks[key+q[0]]).length;return `<div class="card"><h3>${esc(g.g)}</h3><p class="note" style="margin:0 0 6px">${esc(g.w)} · ${dn}/${g.q.length} fatte</p>${g.q.map(q=>chk(key+q[0],q[2],q[1],q[3]||'')).join('')}</div>`}
@@ -528,13 +565,13 @@ $('fbclose').addEventListener('click',()=>{$('fbwrap').hidden=true});
 $('fbwrap').addEventListener('click',e=>{if(e.target.id==='fbwrap')$('fbwrap').hidden=true});
 $('fbtxt').addEventListener('input',fbUpd);$('fbtype').addEventListener('change',fbUpd);
 $('fbsend').addEventListener('click',e=>{if(!$('fbtxt').value.trim()){e.preventDefault();$('fbtxt').focus();return}fbUpd();setTimeout(()=>{$('fbtxt').value='';$('fbwrap').hidden=true;toast('Feedback pronto','Premi Create su GitHub')},300)});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('fbwrap').hidden=true;$('lfwrap').hidden=true}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('fbwrap').hidden=true;$('lfwrap').hidden=true;$('rmwrap').hidden=true}});
 let tt=null;
 function toast(t,s){const el=$('toast');el.innerHTML=esc(t)+(s?`<small>${esc(s)}</small>`:'');el.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('on'),1600)}
 function rOggi(){
   const d=DAYS.find(x=>x.k===view),items=dayItems(d),p=pct(d);
   const map=DAYS.map(x=>{const q=Math.round(pct(x)*100);return `<button data-day="${x.k}" class="${x.k===view?'sel':''}${x.k>realToday?' fut':''}" style="--p:${q}%" aria-label="${dlabel(x)}, ${q}% completato">${x.g}<small>${DN[x.w]}</small></button>`}).join('');
-  const slots=['Mattina','Giornata','Sera','Tue'].map(s=>{const its=items.filter(x=>x[4]===s);return its.length?`<div class="slot">${s==='Tue'?'Le tue missioni':s}</div>`+its.map(x=>x[0].startsWith('c:')?chkC(S.custom.find(c=>'c:'+c.id===x[0])):chk(x[0],x[1],x[2],x[3])).join(''):''}).join('')+addForm('oggi');
+  const slots=['Mattina','Giornata','Sera','Tue'].map(s=>{const its=items.filter(x=>x[4]===s);return its.length?`<div class="slot">${s==='Tue'?'Le tue missioni':s}</div>`+its.map(x=>x[0].startsWith('c:')?chkC(S.custom.find(c=>'c:'+c.id===x[0])):`<div class="cw">${chk(x[0],x[1],x[2],x[3])}${S.checks[x[0]]?'<span></span>':`<button class="rm" data-rm="${esc(x[0])}" aria-label="Rimanda">Rimanda</button>`}<span></span></div>`).join(''):''}).join('')+addForm('oggi');
   $('s-oggi').innerHTML=`<h2>${view===today?'Missioni di oggi':'Missioni del giorno'} · ${dlabel(d)}</h2><p class="lead">La mappa colora ogni giorno in base a quante missioni hai fatto: toccane uno per vederlo o recuperarlo. La serie conta i giorni consecutivi con almeno il 60% fatto, e il giorno in corso non la rompe.</p>
 <div class="map" role="group" aria-label="Mappa dei giorni">${map}</div>
 <div class="grid"><div class="card main"><div class="ring"><b id="dpct">${Math.round(p*100)}%</b><span class="note">della giornata completato · ${items.filter(x=>S.checks[x[0]]).length} di ${items.length} missioni</span></div>${slots}</div>
@@ -616,7 +653,7 @@ function rPeso(){
     s.innerHTML=g};
   if(window.wro)window.wro.disconnect();window.wro=new ResizeObserver(draw);window.wro.observe(s);
 }
-function regXP(){for(const d of DAYS)for(const x of dayItems(d))xpOf[x[0]]=x[1];for(const p of PREPS)xpOf['prep:'+p[0]]=60;for(const h of HOUSE)for(const q of h.q)xpOf['h:'+q[0]]=q[2];for(const i of SHOP)xpOf['sh:'+i.id]=2;for(const d of DAYS){for(const x of HOBBY_D)xpOf['hb:'+d.k+':'+x[0]]=x[2];for(const x of LAV_D)xpOf['lv:'+d.k+':'+x[0]]=x[2]}for(const g of HOBBY)for(const q of g.q)xpOf['ho:'+q[0]]=q[2];for(const g of LAVORO)for(const q of g.q)xpOf['wk:'+q[0]]=q[2]}
+function regXP(){for(const d of DAYS)for(const x of rawItems(d))xpOf[x[0]]=x[1];for(const p of PREPS)xpOf['prep:'+p[0]]=60;for(const h of HOUSE)for(const q of h.q)xpOf['h:'+q[0]]=q[2];for(const i of SHOP)xpOf['sh:'+i.id]=2;for(const d of DAYS){for(const x of HOBBY_D)xpOf['hb:'+d.k+':'+x[0]]=x[2];for(const x of LAV_D)xpOf['lv:'+d.k+':'+x[0]]=x[2]}for(const g of HOBBY)for(const q of g.q)xpOf['ho:'+q[0]]=q[2];for(const g of LAVORO)for(const q of g.q)xpOf['wk:'+q[0]]=q[2]}
 const R={mappa:rMappa,hobby:rHobby,lavoro:rLavoro,oggi:rOggi,spesa:rSpesa,menu:rMenu,prep:rPrep,routine:rRoutine,casa:rCasa,premi:rPremi,peso:rPeso};
 let cur='oggi';
 function show(id){if(!R[id])id='oggi';cur=id;const g=GROUPS.find(x=>x[2].includes(id));lastIn[g[0]]=id;
@@ -635,6 +672,10 @@ document.addEventListener('change',e=>{const t=e.target;
   else if(t.id==='budget'){S.budget=+t.value||0;save();$('tots').innerHTML=totHTML();hud()}});
 document.addEventListener('click',e=>{const t=e.target.closest('button,.blip');if(!t)return;
   if(t.dataset.day){view=t.dataset.day;rOggi()}
+  else if(t.dataset.rm){openRm(t.dataset.rm)}
+  else if(t.dataset.rmto){doRm(t.dataset.rmto)}
+  else if(t.id==='rmgo'){const v=$('rmdate').value;if(!v||!DAY(v)){$('rmdate').focus();return}doRm(v)}
+  else if(t.id==='rmclose'){$('rmwrap').hidden=true}
   else if(t.dataset.chip!==undefined){filtro=t.dataset.chip;try{const u=new URLSearchParams(location.search);filtro?u.set('cat',filtro):u.delete('cat');const q=u.toString();history.replaceState(null,'',(q?'?'+q:location.pathname)+location.hash)}catch(err){}chip();disegna()}
   else if(t.dataset.fly){const l=luoghi().find(x=>x.id===t.dataset.fly);if(l&&LM){LM.setView([l.lat,l.lon],16);$('mappa').scrollIntoView({behavior:'smooth',block:'center'})}}
   else if(t.id==='mecenter'){if(me&&LM)LM.setView([me.lat,me.lng],15);else startGeo()}
@@ -664,7 +705,7 @@ function migraLuoghi(d){
   return [];
 }
 const CAT_IDS={casa:1,lavoro:1,spesa:1,sport:1,svago:1,servizi:1};
-const norm=d=>({checks:d.checks||{},real:d.real||{},home:d.home||{},spent:d.spent||{},weights:Array.isArray(d.weights)?d.weights.filter(w=>w&&typeof w.d==='string'&&typeof w.kg==='number'):[],budget:typeof d.budget==='number'?d.budget:100,luoghi:migraLuoghi(d),coord:d.coord&&typeof d.coord==='object'?Object.fromEntries(Object.entries(d.coord).filter(([k,v])=>v&&typeof v.lat==='number'&&typeof v.lon==='number').map(([k,v])=>[k,{lat:v.lat,lon:v.lon}])):{},custom:Array.isArray(d.custom)?d.custom.filter(c=>c&&typeof c.id==='string'&&typeof c.n==='string').map(c=>({id:c.id,n:c.n.slice(0,140),a:['oggi','casa','hobby','lavoro'].includes(c.a)?c.a:'oggi',d:typeof c.d==='string'?c.d:'',xp:[10,25,50].includes(c.xp)?c.xp:10,p:typeof c.p==='string'?c.p:''})):[]});
+const norm=d=>({checks:d.checks||{},real:d.real||{},home:d.home||{},spent:d.spent||{},weights:Array.isArray(d.weights)?d.weights.filter(w=>w&&typeof w.d==='string'&&typeof w.kg==='number'):[],budget:typeof d.budget==='number'?d.budget:100,moved:d.moved&&typeof d.moved==='object'?Object.fromEntries(Object.entries(d.moved).filter(([k,v])=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v))):{},luoghi:migraLuoghi(d),coord:d.coord&&typeof d.coord==='object'?Object.fromEntries(Object.entries(d.coord).filter(([k,v])=>v&&typeof v.lat==='number'&&typeof v.lon==='number').map(([k,v])=>[k,{lat:v.lat,lon:v.lon}])):{},custom:Array.isArray(d.custom)?d.custom.filter(c=>c&&typeof c.id==='string'&&typeof c.n==='string').map(c=>({id:c.id,n:c.n.slice(0,140),a:['oggi','casa','hobby','lavoro'].includes(c.a)?c.a:'oggi',d:typeof c.d==='string'?c.d:'',xp:[10,25,50].includes(c.xp)?c.xp:10,p:typeof c.p==='string'?c.p:''})):[]});
 try{const l=JSON.parse(localStorage.getItem('m15')||'null');if(l)S=norm(l)}catch(e){}
 show(location.hash.slice(1)||'oggi');
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});

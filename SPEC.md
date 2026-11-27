@@ -26,6 +26,11 @@ Barra in basso con 5 sezioni, sotto-schede in alto quando servono:
 - **Cibo**: Spesa Lidl, Menù, Meal prep.
 - **Tu**: Peso, Routine, Premi.
 
+## Rimandare
+- Ogni missione del giorno ha **Rimanda**: domani, dopodomani, sabato, lunedì o una data a scelta (fino al 15/12),
+  e "Riporta al giorno originale". Le missioni tue di Casa, Hobby e Lavoro hanno **Pianifica**: compaiono in Oggi quel giorno.
+- Stato: `moved` (chiave missione → data); per le missioni tue cambia il campo `d`.
+
 ## Gioco
 - XP per ogni missione; livello ogni 250 XP; gradi: Pivello, Galoppino, Uomo di fiducia,
   Luogotenente, Boss del quartiere, Leggenda di Cuneo (3 livelli ciascuno).
