@@ -6,6 +6,8 @@
 <title>Wedge City</title>
 <link rel="manifest" href="manifest.json"><meta name="theme-color" content="#2b0f5c"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icon.svg">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -118,8 +120,6 @@ section[hidden]{display:none}
 .addp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) 110px auto;gap:8px;margin-top:12px}
 .addp input,.addp select{font:16px Inter,sans-serif;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
 @media(max-width:800px){.mapgrid{grid-template-columns:minmax(0,1fr)}.addp{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.addp button{grid-column:1/-1}}
-#lmap{height:min(62vh,560px);border-radius:16px;border:3px solid #ff2e88;background:#0d0820}
-#lmap .leaflet-tile-pane{filter:invert(1) hue-rotate(185deg) sepia(.35) hue-rotate(230deg) saturate(1.8) brightness(.85) contrast(1.1)}
 .leaflet-container{font:13px Inter,sans-serif}
 .lb{display:flex;flex-direction:column;align-items:center;transform:translateY(-8px)}
 .lb i{width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.6)}
@@ -141,6 +141,27 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 #fbbox textarea{width:100%;min-height:130px;font:16px Inter,sans-serif;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:10px}
 #fbbox select{font:16px Inter,sans-serif;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 8px}
 .go{font:600 13px Inter,sans-serif;color:var(--teal);margin-left:6px;white-space:nowrap}
+#mappa{height:min(66vh,600px);border-radius:16px;border:3px solid #ff2e88;background:#0d0820;box-shadow:0 0 24px rgba(255,46,136,.35)}
+#mappa .leaflet-gl-layer,#mappa .maplibregl-canvas{filter:sepia(.35) hue-rotate(225deg) saturate(1.7) brightness(1.05)}
+.blip{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--c,#ff2e88);border:2px solid #fff;font-size:16px;box-shadow:0 0 10px var(--c,#ff2e88),0 0 2px #000}
+.blip.cluster{background:#ff2e88;color:#fff;font:800 13px Inter,sans-serif;--c:#ff2e88}
+.io{width:18px;height:18px;border-radius:50%;background:#ff2e88;border:3px solid #fff;animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,46,136,.7)}100%{box-shadow:0 0 0 16px rgba(255,46,136,0)}}
+@media(prefers-reduced-motion:reduce){.io{animation:none}}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
+.chip{font:600 14px Inter,sans-serif;min-height:40px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.chip.on{background:#ff2e88;color:#fff;border-color:#ff2e88}
+.gta-pop .leaflet-popup-content-wrapper,.gta-pop .leaflet-popup-tip{background:#140a26;color:#fbeefa;border:2px solid #ff2e88}
+.gta-pop .leaflet-popup-content{margin:12px 14px;font:14px/1.4 Inter,sans-serif}
+.pop h3{font:400 20px/1.1 Anton,Impact,sans-serif;letter-spacing:.4px;margin:0 0 4px;color:#fff}
+.pop .cat{margin:0 0 6px;font-weight:700;font-size:13px}.pop p{margin:4px 0}
+.popb{display:grid;gap:6px;margin-top:8px}
+.popb a,.popb button{display:flex;align-items:center;justify-content:center;min-height:40px;border-radius:10px;font:700 14px Inter,sans-serif;text-decoration:none;color:#fff!important;background:#2b0f5c;border:1px solid #20e3d2;cursor:pointer}
+.leaflet-bar a{background:#140a26;color:#fff;border-color:#3d2560}.leaflet-bar a:hover{background:#2b0f5c}
+.leaflet-control-attribution{background:rgba(20,10,38,.8)!important;color:#c3aed0}.leaflet-control-attribution a{color:#20e3d2}
+#lfwrap{position:fixed;inset:0;z-index:1200;background:rgba(10,4,24,.6);display:grid;place-items:end center;padding:16px}#lfwrap[hidden]{display:none}
+#lfbox{width:min(480px,100%);background:var(--panel);color:var(--ink);border-radius:18px;padding:18px;border:2px solid #ff2e88;display:grid;gap:10px;margin-bottom:calc(70px + env(safe-area-inset-bottom))}
+#lfbox input,#lfbox select{font:16px Inter,sans-serif;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
 #toast{bottom:calc(150px + env(safe-area-inset-bottom))!important;position:fixed;left:50%;bottom:24px;transform:translate(-50%,calc(100% + 48px));visibility:hidden;background:linear-gradient(90deg,#2b0f5c,#ff2e88 60%,#ff8a3d);color:#fff;border-radius:14px;padding:12px 20px;font:400 22px/1.1 Anton,Impact,sans-serif;letter-spacing:.6px;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:transform .35s cubic-bezier(.2,1.4,.4,1);z-index:9;white-space:nowrap;pointer-events:none}
 #toast small{display:block;font:600 13px Inter,sans-serif;color:#b8ffd6;letter-spacing:0}
 #toast.on{transform:translate(-50%,0);visibility:visible}
@@ -192,9 +213,13 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 <div id="toast" role="status" aria-live="polite"></div>
 <button id="fbbtn" aria-label="Lascia un feedback">Feedback</button>
 <div id="fbwrap" hidden><div id="fbbox" role="dialog" aria-modal="true" aria-labelledby="fbt"><h3 id="fbt">Feedback</h3><p class="note" style="margin-top:0">Scrivi cosa cambiare o cosa non va. Si apre GitHub con il commento già pronto: premi “Create” e finisce nel database dei feedback, che Claude legge.</p><div class="row" style="margin-bottom:8px"><select id="fbtype" aria-label="Tipo"><option value="Idea">Idea</option><option value="Bug">Qualcosa non va</option><option value="Contenuto">Contenuto da cambiare</option></select><span class="note" id="fbctx"></span></div><textarea id="fbtxt" maxlength="2000" placeholder="Es. nella scheda Spesa vorrei…"></textarea><div class="row" style="margin-top:10px;justify-content:flex-end"><button class="act ghost" id="fbclose">Chiudi</button><a class="act" id="fbsend" href="#" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">Invia su GitHub</a></div></div></div>
+<div id="lfwrap" hidden><div id="lfbox" role="dialog" aria-modal="true" aria-labelledby="lft"><h3 id="lft">Nuovo luogo</h3><p class="note" style="margin-top:0">Salvato solo su questo telefono e incluso nel backup.</p><input type="text" id="lfname" maxlength="60" placeholder="Nome (es. Casa, Palestra)"><select id="lfcat" aria-label="Categoria"></select><input type="text" id="lfnote" maxlength="200" placeholder="Note (facoltative)"><div class="row" style="justify-content:flex-end"><button class="act ghost" id="lfclose">Annulla</button><button class="act" id="lfsave">Salva luogo</button></div></div></div>
 <nav id="dock" aria-label="Sezioni"></nav>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
 <script>
 {
 const TABS=[['oggi','Oggi'],['mappa','Mappa'],['spesa','Spesa Lidl'],['menu','Menù'],['prep','Meal prep'],['routine','Routine'],['casa','Casa'],['hobby','Hobby'],['lavoro','Lavoro'],['premi','Premi'],['peso','Peso']];
@@ -344,7 +369,7 @@ const PREMI=[
 const K=()=>{const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')};
 let today=K();const realToday=today;if(today<DAYS[0].k)today=DAYS[0].k;if(today>DAYS[DAYS.length-1].k)today=DAYS[DAYS.length-1].k;
 let view=today;
-let S={checks:{},real:{},home:{},spent:{},weights:[],budget:100,custom:[],places:null,wp:'',pin:null};
+let S={checks:{},real:{},home:{},spent:{},weights:[],budget:100,custom:[],luoghi:[],coord:{}};
 let ref=null,saving=false,pending=false;
 const eur=v=>'€ '+v.toFixed(2).replace('.',',');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -408,78 +433,90 @@ const LAVORO=[
 {g:'Carriera',w:'Prima della conferma di aprile',q:[['c1','Segna le date della prossima sessione dell’esame di stato',10],['c2','Lista dei risultati ottenuti da portare al colloquio di conferma',25],['c3','Aggiorna il CV con i progetti di quest’anno',25]]}];
 function rHobby(){$('s-hobby').innerHTML=`<h2>Hobby</h2><p class="lead">Il tempo per gli hobby sta nei blocchi liberi della sera (18:25–19:15 e 20:10–21:10) e nel weekend. Le missioni sono suggerimenti: spunta quelle fatte e aggiungi le tue.</p><div class="grid"><div class="card main"><h3>Ogni giorno · ${dlabel(DAYS.find(x=>x.k===today))}</h3>${HOBBY_D.map(x=>chk('hb:'+today+':'+x[0],x[2],x[1],'')).join('')}</div>${customCard('hobby','Le tue missioni hobby')}${HOBBY.map(g=>questCard('ho:',g)).join('')}</div>`}
 function rLavoro(){$('s-lavoro').innerHTML=`<h2>Lavoro</h2><p class="lead">I progetti di lavoro li aggiungi qui sotto come missioni tue: restano solo sul telefono, così niente di aziendale finisce online. Dalle 7:30 alle 17:30, poi si stacca.</p><div class="grid"><div class="card main"><h3>Ogni giorno · ${dlabel(DAYS.find(x=>x.k===today))}</h3>${LAV_D.map(x=>chk('lv:'+today+':'+x[0],x[2],x[1],'')).join('')}</div>${customCard('lavoro','Le tue missioni di lavoro')}${LAVORO.map(g=>questCard('wk:',g)).join('')}</div>`}
-const BLIP={lavoro:['#3fa9ff','Lavoro'],spesa:['#3ddc84','Spesa'],casa:['#ff2e88','Casa'],altro:['#ffb13b','Altro']};
-const DEF_PLACES=[
-{id:'casa',n:'Casa',addr:'',c:'casa',fixed:1},
-{id:'merlo',n:'Lavoro · Merlo',addr:'Merlo S.p.A., Via Nazionale 9, San Defendente di Cervasca CN',c:'lavoro',fixed:1},
-{id:'lidl',n:'Lidl più vicino',addr:'Lidl Cuneo',c:'spesa',fixed:1},
-{id:'abiti',n:'Cassonetto abiti usati (sacco “dona”)',addr:'raccolta abiti usati Cuneo',c:'altro',fixed:0}];
-const places=()=>S.places||DEF_PLACES;
-const gmaps=a=>'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(a)+'&travelmode=driving';
-const waze=a=>'https://waze.com/ul?q='+encodeURIComponent(a)+'&navigate=yes';
-function autoWp(){const d=DAYS.find(x=>x.k===today);if(today==='2026-11-27'||today==='2026-12-06')return 'lidl';if(d&&d.w>=1&&d.w<=5)return 'merlo';return 'casa'}
-let LM=null,meMk=null,meAcc=null,route=null,mk={},me=null,follow=true,geoWatch=null,geoErr='';
-const pinPlace=()=>S.pin?{id:'pin',n:'Segnalino sulla mappa',addr:'',c:'altro',lat:S.pin.lat,lng:S.pin.lng}:null;
-const dest=p=>p.id==='pin'?p.lat+','+p.lng:(p.addr||(p.lat!=null?p.lat+','+p.lng:''));
-const wazeL=p=>p.id==='pin'||(!p.addr&&p.lat!=null)?'https://waze.com/ul?ll='+p.lat+','+p.lng+'&navigate=yes':waze(p.addr);
-function km(a,b){const R=6371,t=x=>x*Math.PI/180,dl=t(b.lat-a.lat),dg=t(b.lng-a.lng),x=Math.sin(dl/2)**2+Math.cos(t(a.lat))*Math.cos(t(b.lat))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
-function curWp(){const P=places();if(S.wp==='pin'&&S.pin)return pinPlace();return P.find(p=>p.id===S.wp)||P.find(p=>p.id===autoWp())||P[0]}
-let geoQ=[],geoBusy=false;
-function geocode(p){if(!p.addr||geoQ.includes(p.id))return;geoQ.push(p.id);runGeo()}
-function runGeo(){if(geoBusy||!geoQ.length)return;geoBusy=true;const id=geoQ.shift();const p=places().find(x=>x.id===id);if(!p||!p.addr){geoBusy=false;return runGeo()}
-  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&q='+encodeURIComponent(p.addr),{headers:{'Accept-Language':'it'}}).then(r=>r.json()).then(j=>{if(j&&j[0]){if(!S.places)S.places=DEF_PLACES.map(x=>({...x}));const q=S.places.find(x=>x.id===id);if(q){q.lat=+j[0].lat;q.lng=+j[0].lon;q.ga=q.addr;save();updMap();rPlaces()}}else{toast('Indirizzo non trovato',p.n)}}).catch(()=>{}).finally(()=>{setTimeout(()=>{geoBusy=false;runGeo()},1100)})}
-function blipIcon(p,on){return L.divIcon({className:'',iconSize:[0,0],html:on?`<div class="lb" style="transform:translate(-50%,-100%)"><svg width="34" height="44" viewBox="0 0 34 44"><path d="M17 43 L4 22 A15 15 0 1 1 30 22Z" fill="#ffd400" stroke="#05020f" stroke-width="3"/><circle cx="17" cy="16" r="5" fill="#05020f"/></svg><span>${esc(p.n)}</span></div>`:`<div class="lb" style="transform:translate(-50%,-50%)"><i style="background:${BLIP[p.c][0]}"></i><span>${esc(p.n.length>18?p.n.slice(0,17)+'…':p.n)}</span></div>`})}
-function meIcon(hd){return L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,15],html:`<div class="me"><svg width="26" height="26" viewBox="0 0 26 26" style="transform:rotate(${hd||0}deg)"><path d="M13 2 L23 23 L13 18 L3 23Z" fill="#fff" stroke="#05020f" stroke-width="2"/></svg></div>`})}
-function updMap(){if(!LM)return;const P=places(),wp=curWp();
-  for(const id in mk){mk[id].remove();delete mk[id]}
-  const all=[...P];if(S.pin)all.push(pinPlace());
-  for(const p of all){if(p.lat==null)continue;const on=wp&&p.id===wp.id;if(p.id==='pin'&&!on)continue;mk[p.id]=L.marker([p.lat,p.lng],{icon:blipIcon(p,on),zIndexOffset:on?1000:0}).addTo(LM).on('click',()=>{S.wp=p.id;save();updMap();rPlaces();toast('Obiettivo impostato',p.n)})}
-  drawRoute(wp);rObj();}
-let rInfo=null,rKey='',rLine=null,rBusy=false;
-function drawRoute(wp){if(!LM)return;
-  if(!me||!wp||wp.lat==null){if(route){route.remove();route=null}if(rLine){rLine.remove();rLine=null}rInfo=null;return}
-  const key=wp.id+':'+wp.lat.toFixed(4)+','+wp.lng.toFixed(4);
-  const moved=rKey.startsWith(key+'@')?km(me,JSON.parse(rKey.split('@')[1])):1e9;
-  if(rLine&&moved<0.3)return;
-  if(route){route.remove();route=null}
-  route=L.polyline([[me.lat,me.lng],[wp.lat,wp.lng]],{color:'#ff2e88',weight:4,dashArray:'2 12',lineCap:'round',opacity:rLine?0:.9}).addTo(LM);
-  if(rBusy)return;rBusy=true;const from={lat:me.lat,lng:me.lng};
-  fetch(`https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${wp.lng},${wp.lat}?overview=full&geometries=geojson`).then(r=>r.json()).then(j=>{
-    const rt=j&&j.routes&&j.routes[0];if(!rt)throw 0;
-    if(rLine)rLine.remove();
-    const ll=rt.geometry.coordinates.map(c=>[c[1],c[0]]);
-    rLine=L.layerGroup([L.polyline(ll,{color:'#05020f',weight:10,opacity:.8}),L.polyline(ll,{color:'#ff2e88',weight:6})]).addTo(LM);
-    if(route){route.remove();route=null}
-    rInfo={km:rt.distance/1000,min:Math.round(rt.duration/60)};rKey=key+'@'+JSON.stringify(from);rObj();
-  }).catch(()=>{rInfo=null;rKey=''}).finally(()=>{rBusy=false})}
-function rObj(){const wp=curWp(),el=$('objbox');if(!el||!wp)return;const d=dest(wp);const dist=me&&wp.lat!=null?km(me,wp):null;const rtxt=rInfo&&rKey.startsWith(wp.id+':')?' · '+rInfo.km.toFixed(1).replace('.',',')+' km su strada, circa '+rInfo.min+' min':(dist!=null?' · a '+dist.toFixed(1).replace('.',',')+' km in linea d’aria':'');
-  el.innerHTML=`<span style="font-size:13px;opacity:.8">Obiettivo attivo</span><b>${esc(wp.n)}</b><span style="font-size:14px;opacity:.85">${wp.id==='pin'?'Punto scelto sulla mappa':(wp.addr?esc(wp.addr):'Scrivi l’indirizzo nella lista per poterci navigare')}${rtxt}</span>${d?`<div class="nav2"><a class="gm" href="${esc(gmaps(d))}" target="_blank" rel="noopener">Google Maps</a><a class="wz" href="${esc(wazeL(wp))}" target="_blank" rel="noopener">Waze</a></div>`:''}`}
-function rPlaces(){const P=places(),wp=curWp(),el=$('plist');if(!el)return;
-  el.innerHTML=P.map(p=>`<div class="pl${wp&&p.id===wp.id?' act':''}"><span class="dot" style="background:${BLIP[p.c][0]}"></span><div><b>${esc(p.n)}</b>${(()=>{const n=S.custom.filter(c=>c.p===p.id&&!S.checks['c:'+c.id]).length;return n?` <span class="tag t-off">${n} ${n>1?'missioni':'missione'}</span>`:''})()}${p.addr&&p.lat==null?' <span class="note">· cerco sulla mappa…</span>':''}<input type="text" data-addr="${esc(p.id)}" value="${esc(p.addr)}" placeholder="Indirizzo, es. Via Roma 1, Cuneo" aria-label="Indirizzo di ${esc(p.n)}"><div class="btns"><button data-wp="${esc(p.id)}">Imposta obiettivo</button>${p.lat!=null?`<button data-fly="${esc(p.id)}">Mostra</button>`:''}${dest(p)?`<a href="${esc(gmaps(dest(p)))}" target="_blank" rel="noopener">Maps</a><a href="${esc(wazeL(p))}" target="_blank" rel="noopener">Waze</a>`:''}</div></div>${p.fixed?'<span></span>':`<button class="del" data-delp="${esc(p.id)}" aria-label="Elimina ${esc(p.n)}">×</button>`}</div>`).join('');
-  for(const p of P)if(p.addr&&(p.lat==null||p.ga!==p.addr))geocode(p)}
-function startGeo(){if(!navigator.geolocation){geoErr='Il telefono non fornisce la posizione.';return}
-  if(geoWatch!==null)return;
-  geoWatch=navigator.geolocation.watchPosition(pos=>{geoErr='';const c=pos.coords,first=!me;me={lat:c.latitude,lng:c.longitude};
-    if(LM){if(!meMk){meMk=L.marker([me.lat,me.lng],{icon:meIcon(c.heading),zIndexOffset:2000}).addTo(LM);meAcc=L.circle([me.lat,me.lng],{radius:c.accuracy,color:'#20e3d2',weight:1,fillOpacity:.08}).addTo(LM)}else{meMk.setLatLng([me.lat,me.lng]);if(c.heading!=null&&!isNaN(c.heading))meMk.setIcon(meIcon(c.heading));meAcc.setLatLng([me.lat,me.lng]).setRadius(c.accuracy)}
-      if(first||follow)LM.setView([me.lat,me.lng],first?14:LM.getZoom())}
-    updMap();const g=$('geost');if(g)g.textContent='GPS attivo · precisione '+Math.round(c.accuracy)+' m'},
-   err=>{geoErr=err.code===1?'Posizione negata: abilitala per questo sito nelle impostazioni del browser.':'Posizione non disponibile al momento.';const g=$('geost');if(g)g.textContent=geoErr;geoWatch=null},{enableHighAccuracy:true,maximumAge:5000,timeout:20000})}
-function rMappa(){
-  if(!$('lmap')){
-  $('s-mappa').innerHTML=`<h2>Mappa</h2><p class="lead">Tu sei la freccia bianca. Tocca la mappa per piazzare il segnalino giallo, o scegli un tuo punto. La linea rosa è il percorso su strada: per guidare apri Google Maps o Waze.</p>
-<div class="mapbar"><button id="mecenter">Centra su di me</button><button id="clearpin">Togli segnalino</button><span class="note" id="geost" style="align-self:center">Attivo il GPS…</span></div>
-<div class="mapgrid"><div><div id="lmap"></div><div class="radarw" style="margin-top:12px"><div class="obj" id="objbox" style="margin-top:0"></div></div></div>
-<div class="card"><h3>I tuoi punti</h3><div id="plist"></div>
-<div class="addp"><input type="text" id="pn" maxlength="60" placeholder="Nome (es. Palestra)" aria-label="Nome del punto"><input type="text" id="pa" maxlength="200" placeholder="Indirizzo" aria-label="Indirizzo"><select id="pc" aria-label="Tipo">${Object.entries(BLIP).map(([k,v])=>`<option value="${k}">${v[1]}</option>`).join('')}</select><button class="act" id="padd">Aggiungi</button></div>
-<p class="note">Per Lidl e cassonetto abiti, Maps cerca quello più vicino a te. Per vederli sulla mappa scrivi l’indirizzo preciso. Mappa © OpenStreetMap. Percorsi: OSRM. Indirizzi: Nominatim.</p></div></div>`;
-  if(window.L){LM=L.map('lmap',{zoomControl:true,attributionControl:true}).setView([44.384,7.52],12);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(LM);
-    LM.on('click',e=>{S.pin={lat:+e.latlng.lat.toFixed(6),lng:+e.latlng.lng.toFixed(6)};S.wp='pin';save();updMap();rPlaces();toast('Segnalino piazzato','Tocca Google Maps o Waze per partire')});
-    LM.on('dragstart',()=>{follow=false});}
-  else{$('lmap').innerHTML='<p class="note" style="padding:20px;color:#fff">La mappa non si è caricata: controlla la connessione.</p>'}
-  }
-  rPlaces();setTimeout(()=>{if(LM)LM.invalidateSize();updMap()},60);startGeo();
+/* ===== MAPPA (vedi SPEC-MAPPA.md) ===== */
+const CATEGORIE={casa:{label:'Casa',colore:'#3ddc84',icona:'🏠'},lavoro:{label:'Lavoro',colore:'#4da3ff',icona:'🏭'},spesa:{label:'Spesa',colore:'#ffd23f',icona:'🛒'},sport:{label:'Sport',colore:'#ff4fa3',icona:'💪'},svago:{label:'Svago',colore:'#a66bff',icona:'🎮'},servizi:{label:'Servizi',colore:'#9aa0a6',icona:'⚙️'}};
+let BASE=[];                                   // da data/luoghi.json
+let LM=null,gruppo=null,io=null,cerchio=null,me=null,geoWatch=null,placing='',filtro='';
+try{filtro=new URLSearchParams(location.search).get('cat')||''}catch(e){}
+const linkGoogle=(lat,lon)=>`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`;
+const linkWaze=(lat,lon)=>`https://waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+function luoghi(){                             // base (con eventuali coordinate decise dall'utente) + luoghi dell'utente
+  const b=BASE.map(l=>{const c=S.coord[l.id];return c?{...l,lat:c.lat,lon:c.lon}:l});
+  return [...b,...S.luoghi];
 }
+const conCoord=l=>typeof l.lat==='number'&&typeof l.lon==='number';
+// compatibilità con il resto dell'app (missioni con luogo)
+const places=()=>luoghi().map(l=>({id:l.id,n:l.nome,lat:conCoord(l)?l.lat:null,lng:conCoord(l)?l.lon:null}));
+const dest=p=>p&&p.lat!=null?p.lat+','+p.lng:'';
+const gmaps=d=>'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(d)+'&travelmode=driving';
+function blip(cat){const c=CATEGORIE[cat]||CATEGORIE.servizi;return L.divIcon({className:'',iconSize:[34,34],iconAnchor:[17,17],popupAnchor:[0,-16],html:`<div class="blip" style="--c:${c.colore}">${c.icona}</div>`})}
+function missioniQui(id){return S.custom.filter(c=>c.p===id&&!S.checks['c:'+c.id])}
+function popup(l){
+  const c=CATEGORIE[l.categoria]||CATEGORIE.servizi;
+  const dist=me&&LM?LM.distance([me.lat,me.lng],[l.lat,l.lon]):null;
+  const mq=missioniQui(l.id);
+  const tab=l.missione&&TABS.find(t=>t[0]===l.missione);
+  return `<div class="pop"><h3>${c.icona} ${esc(l.nome)}</h3><p class="cat" style="color:${c.colore}">${esc(c.label)}${dist!=null?' · '+(dist/1000).toFixed(1).replace('.',',')+' km da te':''}</p>${l.note?`<p>${esc(l.note)}</p>`:''}${mq.length?`<p><b>Missioni qui:</b> ${mq.map(m=>esc(m.n)).join(', ')}</p>`:''}<div class="popb"><a href="${linkGoogle(l.lat,l.lon)}" target="_blank" rel="noopener">🗺️ Google Maps</a><a href="${linkWaze(l.lat,l.lon)}" target="_blank" rel="noopener">🚗 Waze</a>${tab?`<button data-opentab="${esc(tab[0])}">Apri missione: ${esc(tab[1])}</button>`:''}</div></div>`;
+}
+function disegna(){
+  if(!gruppo)return;gruppo.clearLayers();
+  luoghi().filter(conCoord).filter(l=>!filtro||l.categoria===filtro).forEach(l=>{
+    const m=L.marker([l.lat,l.lon],{icon:blip(l.categoria)});m.bindPopup(()=>popup(l),{maxWidth:280,className:'gta-pop'});m.addTo(gruppo)});
+}
+function chip(){
+  const el=$('chips');if(!el)return;
+  const presenti=Object.keys(CATEGORIE).filter(k=>luoghi().some(l=>l.categoria===k&&conCoord(l)));
+  if(filtro&&!presenti.includes(filtro))filtro='';
+  el.innerHTML=[['','Tutti'],...presenti.map(k=>[k,CATEGORIE[k].icona+' '+CATEGORIE[k].label])].map(([k,t])=>`<button class="chip${k===filtro?' on':''}" data-chip="${esc(k)}">${esc(t)}</button>`).join('');
+}
+function listeLuoghi(){
+  const el=$('llist');if(!el)return;
+  const senza=luoghi().filter(l=>!conCoord(l));
+  const miei=S.luoghi;
+  el.innerHTML=(senza.length?`<div class="card" style="border-color:#ffd23f"><h3>Luoghi senza coordinate</h3><p class="note" style="margin-top:0">Non li mostro sulla mappa finché non hanno una posizione. Premi “Posiziona” e poi tocca il punto giusto sulla mappa.</p>${senza.map(l=>`<div class="pl"><span class="dot" style="background:${(CATEGORIE[l.categoria]||CATEGORIE.servizi).colore}"></span><div><b>${esc(l.nome)}</b>${l.note?`<br><span class="note">${esc(l.note)}</span>`:''}<div class="btns"><button data-place="${esc(l.id)}">${placing===l.id?'Tocca la mappa…':'Posiziona sulla mappa'}</button></div></div><span></span></div>`).join('')}</div>`:'')
+  +`<div class="card"><h3>I tuoi luoghi</h3>${miei.filter(conCoord).map(l=>{const c=CATEGORIE[l.categoria]||CATEGORIE.servizi;return `<div class="pl"><span class="dot" style="background:${c.colore}"></span><div><b>${esc(l.nome)}</b> <span class="note">${esc(c.label)}</span><div class="btns"><button data-fly="${esc(l.id)}">Mostra</button><a href="${linkGoogle(l.lat,l.lon)}" target="_blank" rel="noopener">Maps</a><a href="${linkWaze(l.lat,l.lon)}" target="_blank" rel="noopener">Waze</a></div></div><button class="del" data-dell="${esc(l.id)}" aria-label="Elimina ${esc(l.nome)}">×</button></div>`}).join('')||'<p class="note" style="margin:0">Tieni premuto su un punto della mappa per aggiungere un luogo (casa, palestra…).</p>'}${Object.keys(S.coord).length?`<p class="note">Hai posizionato a mano: ${Object.keys(S.coord).map(id=>esc((BASE.find(b=>b.id===id)||{nome:id}).nome)).join(', ')}. <button class="home-b" data-resetcoord="1">Rimuovi le posizioni</button></p>`:''}</div>`;
+}
+function apriForm(latlng){
+  $('lfwrap').hidden=false;$('lfwrap').dataset.lat=latlng.lat.toFixed(6);$('lfwrap').dataset.lon=latlng.lng.toFixed(6);
+  $('lfcat').innerHTML=Object.entries(CATEGORIE).map(([k,v])=>`<option value="${k}">${v.icona} ${v.label}</option>`).join('');
+  $('lfname').value='';$('lfnote').value='';$('lfname').focus();
+}
+function startGeo(){
+  if(!navigator.geolocation){$('geost').textContent='Il telefono non fornisce la posizione.';return}
+  if(geoWatch!==null)return;
+  geoWatch=navigator.geolocation.watchPosition(p=>{
+    const first=!me;me={lat:p.coords.latitude,lng:p.coords.longitude};const ll=[me.lat,me.lng];
+    if(LM){if(!io){io=L.marker(ll,{icon:L.divIcon({className:'',html:'<div class="io"></div>',iconSize:[18,18],iconAnchor:[9,9]}),zIndexOffset:2000}).addTo(LM);cerchio=L.circle(ll,{radius:p.coords.accuracy,color:'#ff2e88',weight:1,fillOpacity:.08}).addTo(LM)}else{io.setLatLng(ll);cerchio.setLatLng(ll).setRadius(p.coords.accuracy)}
+      if(first)LM.setView(ll,14)}
+    const g=$('geost');if(g)g.textContent='GPS attivo · precisione '+Math.round(p.coords.accuracy)+' m';
+  },err=>{const g=$('geost');if(g)g.textContent=err.code===1?'Posizione negata: consentila per questo sito (lucchetto accanto all’indirizzo → Autorizzazioni).':'Posizione non disponibile al momento.';geoWatch=null},{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+}
+function creaMappa(){
+  if(!window.L){$('mappa').innerHTML='<p class="note" style="padding:20px;color:#fff">La mappa non si è caricata: controlla la connessione.</p>';return}
+  LM=L.map('mappa',{zoomControl:true,maxZoom:19,minZoom:4}).setView([44.384,7.542],13);   // Cuneo
+  let ok=false;
+  try{if(L.maplibreGL&&window.maplibregl&&maplibregl.supported&&maplibregl.supported()!==false){L.maplibreGL({style:'https://tiles.openfreemap.org/styles/dark',attribution:'<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(LM);ok=true}}catch(e){ok=false}
+  if(!ok){$('geost').textContent='Questo dispositivo non riesce a disegnare la mappa (WebGL assente).'}
+  gruppo=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:40,iconCreateFunction:cl=>{const n=cl.getChildCount(),d=Math.round(24+Math.min(32,Math.sqrt(n)*5));return L.divIcon({className:'',iconSize:[d,d],iconAnchor:[d/2,d/2],html:`<div class="blip cluster" style="width:${d}px;height:${d}px">${n}</div>`})}}).addTo(LM);
+  LM.on('contextmenu',e=>apriForm(e.latlng));          // pressione lunga
+  LM.on('click',e=>{if(!placing)return;S.coord[placing]={lat:+e.latlng.lat.toFixed(6),lon:+e.latlng.lng.toFixed(6)};const n=(BASE.find(b=>b.id===placing)||{}).nome||'';placing='';save();chip();disegna();listeLuoghi();toast('Luogo posizionato',n)});
+  LM.on('popupopen',e=>{const b=e.popup.getElement();if(b)b.querySelectorAll('[data-opentab]').forEach(x=>x.addEventListener('click',()=>show(x.dataset.opentab)))});
+}
+function rMappa(){
+  if(!$('mappa')){
+    $('s-mappa').innerHTML=`<h2>Mappa</h2><p class="lead">Tocca un blip per navigare con Google Maps o Waze. Tieni premuto su un punto per aggiungere un luogo.</p>
+<div id="chips" class="chips"></div>
+<div class="mapbar"><button id="mecenter">Centra su di me</button><span class="note" id="geost" style="align-self:center">Attivo il GPS…</span></div>
+<div id="mappa"></div>
+<div id="llist" class="grid" style="margin-top:14px"></div>`;
+    creaMappa();
+    fetch('data/luoghi.json').then(r=>r.json()).then(j=>{BASE=Array.isArray(j)?j:[];chip();disegna();listeLuoghi()}).catch(()=>{BASE=[];chip();disegna();listeLuoghi()});
+  }
+  chip();disegna();listeLuoghi();setTimeout(()=>{if(LM)LM.invalidateSize()},60);startGeo();
+}
+// carica i luoghi base anche fuori dalla mappa (servono alle missioni con luogo)
+fetch('data/luoghi.json').then(r=>r.json()).then(j=>{if(!BASE.length&&Array.isArray(j))BASE=j}).catch(()=>{});
+
 const REPO='https://github.com/AntRizz/WedgeCity';
 function fbLink(){const ty=$('fbtype').value,tx=$('fbtxt').value.trim(),tab=(TABS.find(z=>z[0]===cur)||['',''])[1];
   const title='['+ty+'] '+tab+': '+(tx.split('\n')[0].slice(0,60)||'feedback');
@@ -491,7 +528,7 @@ $('fbclose').addEventListener('click',()=>{$('fbwrap').hidden=true});
 $('fbwrap').addEventListener('click',e=>{if(e.target.id==='fbwrap')$('fbwrap').hidden=true});
 $('fbtxt').addEventListener('input',fbUpd);$('fbtype').addEventListener('change',fbUpd);
 $('fbsend').addEventListener('click',e=>{if(!$('fbtxt').value.trim()){e.preventDefault();$('fbtxt').focus();return}fbUpd();setTimeout(()=>{$('fbtxt').value='';$('fbwrap').hidden=true;toast('Feedback pronto','Premi Create su GitHub')},300)});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')$('fbwrap').hidden=true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('fbwrap').hidden=true;$('lfwrap').hidden=true}});
 let tt=null;
 function toast(t,s){const el=$('toast');el.innerHTML=esc(t)+(s?`<small>${esc(s)}</small>`:'');el.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('on'),1600)}
 function rOggi(){
@@ -594,20 +631,21 @@ document.addEventListener('change',e=>{const t=e.target;
   if(t.dataset.k){const k=t.dataset.k;S.checks[k]=t.checked;const l=t.closest('.q,.it');if(l)l.classList.toggle(l.classList.contains('it')?'got':'done',t.checked);save();
     if(t.checked&&!k.startsWith('sh:'))toast('Missione completata','+'+xpFor(k)+' XP');
     if(cur==='oggi'){const y=window.scrollY;rOggi();window.scrollTo(0,y)}else if(R[cur]&&cur!=='spesa'){const y=window.scrollY;R[cur]();window.scrollTo(0,y)}hud()}
-  else if(t.dataset.addr){if(!S.places)S.places=DEF_PLACES.map(p=>({...p}));const p=S.places.find(x=>x.id===t.dataset.addr);if(p){p.addr=t.value.trim().slice(0,200);p.lat=null;p.lng=null;save();rPlaces();updMap()}}
   else if(t.dataset.r){const v=t.value.trim().replace(',','.');if(v==='')delete S.real[t.dataset.r];else S.real[t.dataset.r]=v;save();$('tots').innerHTML=totHTML();hud()}
   else if(t.id==='budget'){S.budget=+t.value||0;save();$('tots').innerHTML=totHTML();hud()}});
 document.addEventListener('click',e=>{const t=e.target.closest('button,.blip');if(!t)return;
   if(t.dataset.day){view=t.dataset.day;rOggi()}
-  else if(t.dataset.fly){const p=places().find(x=>x.id===t.dataset.fly);if(p&&LM){follow=false;LM.setView([p.lat,p.lng],15)}}
-  else if(t.id==='mecenter'){follow=true;if(me&&LM)LM.setView([me.lat,me.lng],15);else startGeo()}
-  else if(t.id==='clearpin'){S.pin=null;if(S.wp==='pin')S.wp='';save();updMap();rPlaces()}
-  else if(t.dataset.wp){S.wp=t.dataset.wp;save();updMap();rPlaces();{const q=curWp();if(LM&&me&&q&&q.lat!=null){follow=false;LM.fitBounds([[me.lat,me.lng],[q.lat,q.lng]],{padding:[50,50],maxZoom:16});$('lmap').scrollIntoView({behavior:'smooth',block:'center'})}}const p=places().find(x=>x.id===S.wp);if(p)toast('Obiettivo impostato',p.n)}
+  else if(t.dataset.chip!==undefined){filtro=t.dataset.chip;try{const u=new URLSearchParams(location.search);filtro?u.set('cat',filtro):u.delete('cat');const q=u.toString();history.replaceState(null,'',(q?'?'+q:location.pathname)+location.hash)}catch(err){}chip();disegna()}
+  else if(t.dataset.fly){const l=luoghi().find(x=>x.id===t.dataset.fly);if(l&&LM){LM.setView([l.lat,l.lon],16);$('mappa').scrollIntoView({behavior:'smooth',block:'center'})}}
+  else if(t.id==='mecenter'){if(me&&LM)LM.setView([me.lat,me.lng],15);else startGeo()}
+  else if(t.dataset.place){placing=placing===t.dataset.place?'':t.dataset.place;listeLuoghi();if(placing){$('mappa').scrollIntoView({behavior:'smooth',block:'center'});toast('Tocca il punto sulla mappa','')}}
+  else if(t.dataset.resetcoord){S.coord={};save();chip();disegna();listeLuoghi()}
+  else if(t.dataset.dell){const id=t.dataset.dell;S.luoghi=S.luoghi.filter(l=>l.id!==id);save();chip();disegna();listeLuoghi()}
+  else if(t.id==='lfsave'){const n=$('lfname').value.trim();if(!n){$('lfname').focus();return}const w=$('lfwrap');S.luoghi.push({id:'u'+Date.now().toString(36),nome:n.slice(0,60),categoria:$('lfcat').value in CATEGORIE?$('lfcat').value:'servizi',lat:+w.dataset.lat,lon:+w.dataset.lon,note:$('lfnote').value.trim().slice(0,200)});save();w.hidden=true;chip();disegna();listeLuoghi();toast('Luogo aggiunto',n)}
+  else if(t.id==='lfclose'){$('lfwrap').hidden=true}
   else if(t.id==='bkcopy'){const s=JSON.stringify(S);navigator.clipboard.writeText(s).then(()=>toast('Backup copiato','Incollalo nella nuova app')).catch(()=>{$('bktxt').hidden=false;$('bktxt').value=s;$('bktxt').select();toast('Copia manuale','Seleziona il testo e copialo')})}
   else if(t.id==='bkimp'){try{const d=JSON.parse($('bkin').value);if(!d||typeof d!=='object'||!d.checks)throw 0;S=norm(d);save();$('bkin').value='';show(cur);toast('Backup importato','Bentornato, Antonio')}catch(err){toast('Backup non valido','Controlla di averlo incollato tutto')}}
   else if(t.id==='bkshow'){$('bktxt').hidden=false;$('bktxt').value=JSON.stringify(S);$('bktxt').select()}
-  else if(t.id==='padd'){const n=$('pn').value.trim(),a=$('pa').value.trim();if(!n){$('pn').focus();return}if(!S.places)S.places=DEF_PLACES.map(p=>({...p}));const id='p'+Date.now().toString(36);S.places.push({id,n:n.slice(0,60),addr:a.slice(0,200),c:$('pc').value in BLIP?$('pc').value:'altro',fixed:false});S.wp=id;save();rPlaces();updMap();toast('Punto aggiunto',n)}
-  else if(t.dataset.delp){if(!S.places)S.places=DEF_PLACES.map(p=>({...p}));S.places=S.places.filter(p=>p.id!==t.dataset.delp);if(S.wp===t.dataset.delp)S.wp='';save();rPlaces();updMap()}
   else if(t.dataset.add){const a=t.dataset.add,inp=$('new-'+a),n=inp.value.trim();if(!n){inp.focus();return}S.custom.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),n:n.slice(0,140),a,d:a==='oggi'?view:'',xp:+$('xp-'+a).value||10,p:$('pl-'+a)?$('pl-'+a).value:''});save();const y=window.scrollY;R[cur]();window.scrollTo(0,y);toast('Missione aggiunta',n.slice(0,40));const ni=$('new-'+a);if(ni)ni.focus()}
   else if(t.dataset.delc){const id=t.dataset.delc;S.custom=S.custom.filter(c=>c.id!==id);delete S.checks['c:'+id];save();const y=window.scrollY;R[cur]();window.scrollTo(0,y);hud()}
   else if(t.dataset.home){const id=t.dataset.home;if(S.home[id])delete S.home[id];else S.home[id]=true;save();const y=window.scrollY;rSpesa();window.scrollTo(0,y);hud()}
@@ -618,7 +656,15 @@ document.addEventListener('click',e=>{const t=e.target.closest('button,.blip');i
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('blip')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));return}if(e.key==='Enter'&&e.target.id&&e.target.id.startsWith('new-')){e.preventDefault();const b=document.querySelector(`[data-add=${e.target.id.slice(4)}]`);if(b)b.click()}});
 window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
 regXP();
-const norm=d=>({checks:d.checks||{},real:d.real||{},home:d.home||{},spent:d.spent||{},weights:Array.isArray(d.weights)?d.weights.filter(w=>w&&typeof w.d==='string'&&typeof w.kg==='number'):[],budget:typeof d.budget==='number'?d.budget:100,places:Array.isArray(d.places)?d.places.filter(p=>p&&typeof p.id==='string'&&typeof p.n==='string').map(p=>({id:p.id,n:String(p.n).slice(0,60),addr:String(p.addr||'').slice(0,200),c:BLIP[p.c]?p.c:'altro',fixed:!!p.fixed,lat:typeof p.lat==='number'?p.lat:null,lng:typeof p.lng==='number'?p.lng:null,ga:typeof p.ga==='string'?p.ga:''})):null,pin:d.pin&&typeof d.pin.lat==='number'&&typeof d.pin.lng==='number'?{lat:d.pin.lat,lng:d.pin.lng}:null,wp:typeof d.wp==='string'?d.wp:'',custom:Array.isArray(d.custom)?d.custom.filter(c=>c&&typeof c.id==='string'&&typeof c.n==='string').map(c=>({id:c.id,n:c.n.slice(0,140),a:['oggi','casa','hobby','lavoro'].includes(c.a)?c.a:'oggi',d:typeof c.d==='string'?c.d:'',xp:[10,25,50].includes(c.xp)?c.xp:10,p:typeof c.p==='string'?c.p:''})):[]});
+function migraLuoghi(d){
+  const ok=l=>l&&typeof l.id==='string'&&typeof l.nome==='string';
+  if(Array.isArray(d.luoghi))return d.luoghi.filter(ok).map(l=>({id:l.id,nome:l.nome.slice(0,60),categoria:l.categoria in CAT_IDS?l.categoria:'servizi',lat:typeof l.lat==='number'?l.lat:null,lon:typeof l.lon==='number'?l.lon:null,note:typeof l.note==='string'?l.note.slice(0,200):''}));
+  // vecchio formato (places con indirizzo): tengo i luoghi propri, i fissi arrivano da data/luoghi.json
+  if(Array.isArray(d.places))return d.places.filter(p=>p&&!p.fixed&&typeof p.n==='string').map(p=>({id:String(p.id),nome:p.n.slice(0,60),categoria:{lavoro:'lavoro',spesa:'spesa',casa:'casa'}[p.c]||'servizi',lat:typeof p.lat==='number'?p.lat:null,lon:typeof p.lng==='number'?p.lng:null,note:typeof p.addr==='string'?p.addr.slice(0,200):''}));
+  return [];
+}
+const CAT_IDS={casa:1,lavoro:1,spesa:1,sport:1,svago:1,servizi:1};
+const norm=d=>({checks:d.checks||{},real:d.real||{},home:d.home||{},spent:d.spent||{},weights:Array.isArray(d.weights)?d.weights.filter(w=>w&&typeof w.d==='string'&&typeof w.kg==='number'):[],budget:typeof d.budget==='number'?d.budget:100,luoghi:migraLuoghi(d),coord:d.coord&&typeof d.coord==='object'?Object.fromEntries(Object.entries(d.coord).filter(([k,v])=>v&&typeof v.lat==='number'&&typeof v.lon==='number').map(([k,v])=>[k,{lat:v.lat,lon:v.lon}])):{},custom:Array.isArray(d.custom)?d.custom.filter(c=>c&&typeof c.id==='string'&&typeof c.n==='string').map(c=>({id:c.id,n:c.n.slice(0,140),a:['oggi','casa','hobby','lavoro'].includes(c.a)?c.a:'oggi',d:typeof c.d==='string'?c.d:'',xp:[10,25,50].includes(c.xp)?c.xp:10,p:typeof c.p==='string'?c.p:''})):[]});
 try{const l=JSON.parse(localStorage.getItem('m15')||'null');if(l)S=norm(l)}catch(e){}
 show(location.hash.slice(1)||'oggi');
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});

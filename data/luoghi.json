@@ -1,0 +1,28 @@
+[
+  {
+    "id": "merlo",
+    "nome": "Lavoro · Merlo",
+    "categoria": "lavoro",
+    "lat": null,
+    "lon": null,
+    "note": "Via Nazionale 9, San Defendente di Cervasca. Entrata 7:30, uscita 17:30."
+  },
+  {
+    "id": "lidl",
+    "nome": "Lidl",
+    "categoria": "spesa",
+    "lat": null,
+    "lon": null,
+    "note": "Spesa: venerdì 27 novembre e sabato 6 dicembre.",
+    "missione": "spesa"
+  },
+  {
+    "id": "abiti",
+    "nome": "Cassonetto abiti usati",
+    "categoria": "servizi",
+    "lat": null,
+    "lon": null,
+    "note": "Per il sacco “dona” del cambio armadio.",
+    "missione": "casa"
+  }
+]

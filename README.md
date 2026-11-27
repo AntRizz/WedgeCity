@@ -17,6 +17,7 @@ Premi **Feedback** nell'app, scrivi e conferma su GitHub: diventa una issue con 
 - `index.html` — l'app completa
 - `sw.js` — funzionamento offline
 - `manifest.json`, `icon*` — installazione
-- `SPEC.md` — specifiche
+- `SPEC.md`, `SPEC-MAPPA.md` — specifiche
+- `data/luoghi.json` — luoghi fissi della mappa
 
-Mappa © OpenStreetMap contributors. Percorsi OSRM. Indirizzi Nominatim.
+Mappa: OpenFreeMap, © OpenStreetMap contributors.

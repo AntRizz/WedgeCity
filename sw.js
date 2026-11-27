@@ -1,7 +1,7 @@
 // Service worker di Wedge City: tiene in cache l'app per usarla anche offline.
 // Le mappe, i percorsi e la ricerca indirizzi passano sempre dalla rete.
-const CACHE = 'wedgecity-v2';
-const SHELL = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
+const CACHE = 'wedgecity-v3';
+const SHELL = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png', './data/luoghi.json'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
